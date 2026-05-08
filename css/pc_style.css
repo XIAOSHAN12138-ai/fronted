@@ -753,6 +753,10 @@ body {
     background-color: #f3f4f6;
 }
 
+.model-option:not(.active) .model-check {
+    display: none;
+}
+
 .model-icon {
     width: 36px;
     height: 36px;
@@ -1161,6 +1165,31 @@ body {
 .dropdown-item.active {
     background-color: var(--accent-primary);
     color: white;
+}
+
+.dropdown-item[data-scene],
+.dropdown-item[data-type],
+.dropdown-item[data-function] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-item[data-scene].active,
+.dropdown-item[data-type].active,
+.dropdown-item[data-function].active {
+    background-color: #f3f4f6;
+    color: inherit;
+}
+
+.dropdown-item[data-scene].active::after,
+.dropdown-item[data-type].active::after,
+.dropdown-item[data-function].active::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    color: var(--accent-primary);
+    font-size: 14px;
 }
 
 /* 比例和清晰度下拉菜单样式 */

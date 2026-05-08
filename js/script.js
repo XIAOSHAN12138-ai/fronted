@@ -926,6 +926,7 @@ function initDropdowns() {
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.stopPropagation();
+            const menu = item.closest('.dropdown-menu');
             const parentDrop = item.closest('.control-dropdown');
             if (parentDrop) {
                 const labelSpan = parentDrop.querySelector('span:first-child');
@@ -933,7 +934,11 @@ function initDropdowns() {
                     labelSpan.textContent = item.textContent.trim();
                 }
             }
-            item.closest('.dropdown-menu').style.display = 'none';
+            if (menu) {
+                menu.querySelectorAll('.dropdown-item').forEach(opt => opt.classList.remove('active'));
+                item.classList.add('active');
+                menu.style.display = 'none';
+            }
         });
     });
 
