@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频大模型整合平台 - 生成</title>
+    <link rel="stylesheet" href="css/pc_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- 引入 API 服务 (script.js 中包含) -->
+</head>
+<body>
+    <div class="window-container">
+        <div class="title-bar">
+            <div class="title-bar-left">
+                <span class="title-bar-logo">视频大模型整合平台</span>
+            </div>
+            <div class="window-controls">
+                <button class="window-control minimize"></button>
+                <button class="window-control maximize"></button>
+                <button class="window-control close"></button>
+            </div>
+        </div>
+        
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <div class="sidebar-logo">
+                    <i class="fas fa-star"></i>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="pc_community.html" class="sidebar-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span class="tooltip">社区</span>
+                    </a>
+                    <a href="pc_generate.html" class="sidebar-nav-item active">
+                        <i class="fas fa-magic"></i>
+                        <span class="tooltip">生成</span>
+                    </a>
+                    <a href="pc_assets.html" class="sidebar-nav-item">
+                        <i class="fas fa-box"></i>
+                        <span class="tooltip">资产</span>
+                    </a>
+                    <a href="pc_tools.html" class="sidebar-nav-item">
+                        <i class="fas fa-tools"></i>
+                        <span class="tooltip">全部工具</span>
+                    </a>
+                </nav>
+                <div class="sidebar-bottom">
+                    <a href="pc_admin.html" class="sidebar-nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span class="tooltip">管理</span>
+                    </a>
+                    <div class="sidebar-nav-item">
+                        <i class="fas fa-code"></i>
+                        <span class="tooltip">API</span>
+                    </div>
+                    <a href="pc_login.html" class="sidebar-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="tooltip">个人中心</span>
+                    </a>
+                </div>
+            </aside>
+            
+            <main class="main-content" style="padding: 24px;">
+                <div class="generate-container">
+                    <!-- 顶部操作栏 (保持不变) -->
+                    <div class="generate-header">
+                        <div class="default-creation">
+                            <div class="control-dropdown">
+                                <span class="control-label">默认创作</span>
+                                <i class="fas fa-chevron-down"></i>
+                                <div class="dropdown-menu">
+                                    <div class="dropdown-item active">新对话</div>
+                                    <div class="dropdown-item">默认创作</div>
+                                    <div class="dropdown-item">2026年4月</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="header-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" placeholder="搜索">
+                            </div>
+                            <div class="control-group">
+                                <div class="control-dropdown">
+                                    <span class="control-label">时间</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                    <div class="dropdown-menu">
+                                        <div class="dropdown-item active">-- 请选择 --</div>
+                                        <div class="dropdown-item">全部</div>
+                                        <div class="dropdown-item">最近一周</div>
+                                        <div class="dropdown-item">最近一个月</div>
+                                        <div class="dropdown-item">最近三个月</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <div class="control-dropdown">
+                                    <span class="control-label">生成类型</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                    <div class="dropdown-menu">
+                                        <div class="dropdown-item active">-- 请选择 --</div>
+                                        <div class="dropdown-item">全部</div>
+                                        <div class="dropdown-item">图片</div>
+                                        <div class="dropdown-item">视频</div>
+                                        <div class="dropdown-item">对话型</div>
+                                        <div class="dropdown-item">Agent模式</div>
+                                        <div class="dropdown-item">动作模仿</div>
+                                        <div class="dropdown-item">替换</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <div class="control-dropdown">
+                                    <span class="control-label">操作类型</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                    <div class="dropdown-menu">
+                                        <div class="dropdown-item active">-- 请选择 --</div>
+                                        <div class="dropdown-item">全部</div>
+                                        <div class="dropdown-item">创建</div>
+                                        <div class="dropdown-item">编辑</div>
+                                        <div class="dropdown-item">删除</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 对话内容显示区域 -->
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- 历史消息保持不变，但会通过 JS 动态添加新消息 -->
+                        </div>
+                        <div class="chat-input-area">
+                            <!-- Agent模式自定义面板 -->
+                            <div class="agent-custom-panel" style="display:none; position: absolute; bottom: 100%; left: 0; right: 0; background-color: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15); z-index: 1000; margin-bottom: 8px;">
+                                <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                    <span class="panel-title" style="font-size: 14px; font-weight: 500; color: #111827;">生成偏好</span>
+                                    <label class="auto-toggle" style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="toggle-label" style="font-size: 13px; color: #6b7280;">自动</span>
+                                        <input type="checkbox" class="toggle-input" id="autoToggle" style="display: none;">
+                                        <span class="toggle-slider" style="width: 40px; height: 20px; background-color: #e5e7eb; border-radius: 10px; position: relative; cursor: pointer;">
+                                            <span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: all 0.2s;"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="tab-switcher" style="display: flex; gap: 1px; background-color: #e5e7eb; border-radius: 6px; margin-bottom: 16px;">
+                                    <div class="tab-btn active" data-tab="image" style="flex: 1; padding: 8px 16px; text-align: center; background-color: white; border-radius: 6px 0 0 6px; cursor: pointer; font-size: 13px; font-weight: 500;">图片</div>
+                                    <div class="tab-btn" data-tab="video" style="flex: 1; padding: 8px 16px; text-align: center; background-color: transparent; border-radius: 0 6px 6px 0; cursor: pointer; font-size: 13px; font-weight: 500; color: #6b7280;">视频</div>
+                                </div>
+                                <div class="tab-content image-tab active">
+                                    <div class="section-label" style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">选择比例</div>
+                                    <div class="ratio-grid" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                                        <div class="ratio-item active" data-ratio="智能" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon smart-icon" style="width: 20px; height: 16px; border: 1.5px solid #2563eb; border-radius: 3px; background-color: #dbeafe; display: flex; align-items: center; justify-content: center;"><i class="fas fa-magic" style="font-size: 10px; color: #2563eb;"></i></div><span style="font-size: 10px; color: #2563eb; font-weight: 500;">智能</span></div>
+                                        <div class="ratio-item" data-ratio="21:9" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon wide-icon" style="width: 24px; height: 12px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">21:9</span></div>
+                                        <div class="ratio-item" data-ratio="16:9" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon wide-icon" style="width: 24px; height: 12px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">16:9</span></div>
+                                        <div class="ratio-item" data-ratio="3:2" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon landscape-icon" style="width: 20px; height: 14px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">3:2</span></div>
+                                        <div class="ratio-item" data-ratio="4:3" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon landscape-icon" style="width: 20px; height: 14px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">4:3</span></div>
+                                        <div class="ratio-item" data-ratio="1:1" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon square-icon" style="width: 14px; height: 14px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">1:1</span></div>
+                                        <div class="ratio-item" data-ratio="3:4" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon portrait-icon" style="width: 14px; height: 20px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">3:4</span></div>
+                                        <div class="ratio-item" data-ratio="2:3" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon portrait-icon" style="width: 14px; height: 20px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">2:3</span></div>
+                                        <div class="ratio-item" data-ratio="9:16" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon tall-icon" style="width: 12px; height: 24px; border: 1.5px solid #d1d5db; border-radius: 3px; background-color: #fff;"></div><span style="font-size: 10px; color: #6b7280;">9:16</span></div>
+                                    </div>
+                                    <div class="section-label" style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">其他设置</div>
+                                    <div class="settings-row" style="display: flex; gap: 12px;">
+                                        <div class="settings-dropdown model-dropdown" style="flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; position: relative;">
+                                            <div style="display: flex; align-items: center; gap: 6px;">
+                                                <i class="fas fa-cube" style="color: #2563eb; font-size: 12px;"></i>
+                                                <span style="font-size: 12px; color: #374151;">图片 5.0 Lite</span>
+                                            </div>
+                                            <i class="fas fa-chevron-down" style="color: #9ca3af; font-size: 10px;"></i>
+                                            <div class="dropdown-menu" style="position: absolute; bottom: 100%; left: 0; right: 0; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); z-index: 1000; margin-bottom: 0; padding: 0; display: none;">
+                                                <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">选择模型：图片 5.0 Lite by Seedream 5.0 Lite</div>
+                                                <div class="dropdown-item active" data-model-id="image_5.0_lite" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 36px; height: 36px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-paper-plane" style="color: #2563eb;"></i></div>
+                                                    <div style="flex: 1;"><div style="font-size: 13px; font-weight: 500; color: #111827; display: flex; align-items: center; gap: 6px;">图片 5.0 Lite<span style="font-size: 10px; color: #2563eb; background-color: #eff6ff; padding: 1px 6px; border-radius: 4px;">New</span></div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">指令响应更精准，生成效果更智能</div></div>
+                                                </div>
+                                                <div class="dropdown-item" data-model-id="image_4.6" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 36px; height: 36px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-paper-plane" style="color: #2563eb;"></i></div>
+                                                    <div style="flex: 1;"><div style="font-size: 13px; font-weight: 500; color: #111827; display: flex; align-items: center; gap: 6px;">图片 4.6<span style="font-size: 10px; color: #2563eb; background-color: #eff6ff; padding: 1px 6px; border-radius: 4px;">New</span></div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">人像一致性保持更好，性价比更高</div></div>
+                                                </div>
+                                                <div class="dropdown-item" data-model-id="image_4.5" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 36px; height: 36px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-paper-plane" style="color: #2563eb;"></i></div>
+                                                    <div style="flex: 1;"><div style="font-size: 13px; font-weight: 500; color: #111827;">图片 4.5</div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">强化一致性、风格与图文响应</div></div>
+                                                </div>
+                                                <div class="dropdown-item" data-model-id="image_4.1" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 36px; height: 36px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-paper-plane" style="color: #2563eb;"></i></div>
+                                                    <div style="flex: 1;"><div style="font-size: 13px; font-weight: 500; color: #111827;">图片 4.1</div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">更专业的创意、美学和一致性保持</div></div>
+                                                </div>
+                                                <div class="dropdown-item" data-model-id="image_4.0" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+                                                    <div style="width: 36px; height: 36px; background-color: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fas fa-paper-plane" style="color: #2563eb;"></i></div>
+                                                    <div style="flex: 1;"><div style="font-size: 13px; font-weight: 500; color: #111827;">图片 4.0</div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">支持多参考图、系列组图生成</div></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="settings-dropdown resolution-dropdown" style="flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; position: relative;">
+                                            <div style="display: flex; align-items: center; gap: 6px;"><i class="fas fa-tv" style="color: #2563eb; font-size: 12px;"></i><span style="font-size: 12px; color: #374151;">高清 2K</span></div>
+                                            <i class="fas fa-chevron-down" style="color: #9ca3af; font-size: 10px;"></i>
+                                            <div class="dropdown-menu" style="position: absolute; bottom: 100%; left: 0; right: 0; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); z-index: 1000; margin-bottom: 0; padding: 8px 0; display: none;">
+                                                <div class="dropdown-item active" data-res="2K">高清 2K</div>
+                                                <div class="dropdown-item" data-res="4K">超清 4K<span style="font-size: 10px; color: #2563eb; font-weight: 500; margin-left: 8px;">+</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-content video-tab" style="display: none;">
+                                    <div class="section-label" style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">选择比例</div>
+                                    <div class="ratio-grid" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                                        <div class="ratio-item active" data-ratio="智能" style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; min-width: 50px;"><div class="ratio-icon smart-icon" style="width: 20px; height: 16px; border: 1.5px solid #2563eb; border-radius: 3px; background-color: #dbeafe; display: flex; align-items: center; justify-content: center;"><i class="fas fa-magic" style="font-size: 10px; color: #2563eb;"></i></div><span style="font-size: 10px; color: #2563eb; font-weight: 500;">智能</span></div>
+                                        <div class="ratio-item" data-ratio="21:9"><div class="ratio-icon wide-icon"></div><span>21:9</span></div>
+                                        <div class="ratio-item" data-ratio="16:9"><div class="ratio-icon wide-icon"></div><span>16:9</span></div>
+                                        <div class="ratio-item" data-ratio="4:3"><div class="ratio-icon landscape-icon"></div><span>4:3</span></div>
+                                        <div class="ratio-item" data-ratio="1:1"><div class="ratio-icon square-icon"></div><span>1:1</span></div>
+                                        <div class="ratio-item" data-ratio="3:4"><div class="ratio-icon portrait-icon"></div><span>3:4</span></div>
+                                        <div class="ratio-item" data-ratio="9:16"><div class="ratio-icon tall-icon"></div><span>9:16</span></div>
+                                    </div>
+                                    <div class="section-label" style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">其他设置</div>
+                                    <div class="settings-row single" style="display: flex; gap: 12px;">
+                                        <div class="settings-dropdown model-dropdown" style="flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; position: relative;">
+                                            <div style="display: flex; align-items: center; gap: 6px;"><i class="fas fa-cube" style="color: #2563eb; font-size: 12px;"></i><span style="font-size: 12px; color: #374151;">Seedance 2.0 Fast VIP</span></div>
+                                            <i class="fas fa-chevron-down" style="color: #9ca3af; font-size: 10px;"></i>
+                                            <div class="dropdown-menu" style="position: absolute; bottom: 100%; left: 0; right: 0; background-color: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1); z-index: 1000; margin-bottom: 0; padding: 8px 0; display: none;">
+                                                <div class="dropdown-item active" data-model-id="seedance_2.0_fast_vip" style="padding: 10px 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;"><i class="fas fa-cube" style="color: #2563eb;"></i><div><div style="font-size: 13px; font-weight: 500; color: #111827; display: flex; align-items: center; gap: 6px;">Seedance 2.0 Fast VIP<span style="font-size: 10px; color: #2563eb; background-color: #eff6ff; padding: 1px 6px; border-radius: 4px;">New</span></div><div style="font-size: 11px; color: #6b7280; margin-top: 2px;">极速推理，会员专属通道，音视文图均可参考</div></div></div>
+                                                <div class="dropdown-item" data-model-id="seedance_2.0_vip"><i class="fas fa-cube" style="color: #2563eb;"></i><div><div>Seedance 2.0 VIP<span class="model-badge" style="margin-left: 6px;">New</span></div><div style="font-size: 11px; color: #6b7280;">全模态能力，会员专属通道</div></div></div>
+                                                <div class="dropdown-item" data-model-id="seedance_2.0_fast"><i class="fas fa-cube" style="color: #2563eb;"></i><div><div>Seedance 2.0 Fast<span class="model-badge" style="margin-left: 6px;">New</span></div><div style="font-size: 11px; color: #6b7280;">高性价比，音视文图均可参考</div></div></div>
+                                                <div class="dropdown-item" data-model-id="seedance_2.0"><i class="fas fa-cube" style="color: #2563eb;"></i><div><div>Seedance 2.0<span class="model-badge-special" style="margin-left: 6px;">限免1次</span><span class="model-badge" style="margin-left: 4px;">New</span></div><div style="font-size: 11px; color: #6b7280;">全能王者，音视文图均可参考</div></div></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="upload-btn" id="uploadBtn">
+                                <i class="fas fa-plus"></i>
+                            </div>
+                            <div class="chat-input-wrapper">
+                                <!-- 数字人场景输入区 -->
+                                <div class="digital-human-inputs" style="display:none;">
+                                    <div class="dh-upload-row">
+                                        <div class="dh-upload-box character-upload" id="characterUpload">
+                                            <i class="fas fa-user"></i>
+                                            <span>角色</span>
+                                        </div>
+                                        <div class="dh-upload-box voice-upload" id="voiceUpload">
+                                            <i class="fas fa-volume-up"></i>
+                                            <span>音色</span>
+                                        </div>
+                                    </div>
+                                    <div class="dh-input-row">
+                                        <input type="text" class="dh-input speech-content" id="speechContent" placeholder="请输入你希望角色说出的内容">
+                                    </div>
+                                    <div class="dh-input-row">
+                                        <input type="text" class="dh-input action-desc" id="actionDesc" placeholder="（可选）添加动作描述和镜头语言">
+                                    </div>
+                                </div>
+                                <!-- 配音生成场景输入区 -->
+                                <div class="voiceover-inputs" style="display:none;">
+                                    <div class="dh-upload-row">
+                                        <div class="dh-upload-box voice-upload" id="voiceoverVoiceUpload">
+                                            <i class="fas fa-volume-up"></i>
+                                            <span>音色</span>
+                                        </div>
+                                    </div>
+                                    <div class="dh-input-row">
+                                        <input type="text" class="dh-input voiceover-content" id="voiceoverContent" placeholder="请输入你想生成的说话内容">
+                                    </div>
+                                </div>
+                                <input type="text" class="chat-input" id="chatInput" placeholder="上传参考图、输入文字或 @ 主体，描述你想生成的图片。">
+                                <div class="chat-controls">
+                                    <div class="chat-controls-left">
+                                        <!-- 图片生成场景按钮组（默认显示） -->
+                                        <div class="scene-controls image-scene">
+                                            <div class="control-dropdown">
+                                                <span>-- 请选择 --</span>
+                                                <i class="fas fa-chevron-up"></i>
+                                                <div class="dropdown-menu">
+                                                    <div class="dropdown-item active">-- 请选择 --</div>
+                                                    <div class="dropdown-item" data-scene="agent">Agent模式</div>
+                                                    <div class="dropdown-item" data-scene="image">图片生成</div>
+                                                    <div class="dropdown-item" data-scene="video">视频生成</div>
+                                                    <div class="dropdown-item" data-scene="digital-human">数字人</div>
+                                                    <div class="dropdown-item" data-scene="voiceover">配音生成</div>
+                                                </div>
+                                            </div>
+                                            <div class="control-dropdown model-dropdown" id="imageModelDropdown">
+                                                <span>-- 请选择 --</span>
+                                                <i class="fas fa-chevron-up"></i>
+                                                <div class="dropdown-menu model-dropdown-panel">
+                                                    <div class="model-panel-header">请选择模型</div>
+                                                    <div class="model-option active" data-model-id="image_5.0_lite"><div class="model-icon"><i class="fas fa-paper-plane"></i></div><div class="model-info"><div class="model-name">图片5.0 Lite<span class="model-badge">New</span></div><div class="model-desc">指令响应更精准，生成效果更智能</div></div><div class="model-check"><i class="fas fa-check"></i></div></div>
+                                                    <div class="model-option" data-model-id="image_4.6"><div class="model-icon"><i class="fas fa-paper-plane"></i></div><div class="model-info"><div class="model-name">图片4.6<span class="model-badge">New</span></div><div class="model-desc">人像一致性保持更好，性价比更高</div></div></div>
+                                                    <div class="model-option" data-model-id="image_4.5"><div class="model-icon"><i class="fas fa-paper-plane"></i></div><div class="model-info"><div class="model-name">图片4.5</div><div class="model-desc">强化一致性、风格与图文响应</div></div></div>
+                                                    <div class="model-option" data-model-id="image_4.1"><div class="model-icon"><i class="fas fa-paper-plane"></i></div><div class="model-info"><div class="model-name">图片4.1</div><div class="model-desc">更专业的创意、美学和一致性保持</div></div></div>
+                                                    <div class="model-option" data-model-id="image_4.0"><div class="model-icon"><i class="fas fa-paper-plane"></i></div><div class="model-info"><div class="model-name">图片4.0</div><div class="model-desc">支持多参考图、系列组图生成</div></div></div>
+                                                </div>
+                                            </div>
+                                            <div class="control-dropdown ratio-resolution-dropdown" id="imageRatioResDropdown">
+                                                <span>默认</span><span class="res-label">2K</span><i class="fas fa-chevron-up"></i>
+                                                <div class="dropdown-menu ratio-resolution-panel">
+                                                    <div class="panel-section"><div class="section-label">选择比例</div><div class="ratio-grid"><div class="ratio-item active" data-ratio="banner"><div class="ratio-icon banner-icon"></div><span>默认</span></div><div class="ratio-item" data-ratio="21:9"><span>21:9</span></div><div class="ratio-item" data-ratio="16:9"><span>16:9</span></div><div class="ratio-item" data-ratio="3:2"><span>3:2</span></div><div class="ratio-item" data-ratio="4:3"><span>4:3</span></div><div class="ratio-item" data-ratio="1:1"><span>1:1</span></div><div class="ratio-item" data-ratio="3:4"><span>3:4</span></div><div class="ratio-item" data-ratio="2:3"><span>2:3</span></div><div class="ratio-item" data-ratio="9:16"><span>9:16</span></div></div></div>
+                                                    <div class="panel-section"><div class="section-label">选择分辨率</div><div class="resolution-options"><div class="resolution-btn active" data-res="2K">高清2K</div><div class="resolution-btn" data-res="4K">超清4K<span class="resolution-badge">+</span></div></div></div>
+                                                    <div class="panel-section"><div class="section-label">尺寸</div><div class="size-inputs"><span>W</span><input type="text" class="size-input" value="2048"><button class="swap-btn" title="交换宽高">⇄</button><span>H</span><input type="text" class="size-input" value="2048"><span>PX</span></div></div>
+                                                </div>
+                                            </div>
+                                            <div class="control-dropdown type-selector"><span class="selected-type">-- 请选择 --</span><i class="fas fa-chevron-up"></i><div class="dropdown-menu"><div class="dropdown-item active">-- 请选择 --</div><div class="dropdown-item" data-type="image">图片</div><div class="dropdown-item" data-type="video">视频</div></div></div>
+                                            <div class="control-dropdown function-selector"><span class="selected-function">-- 请选择 --</span><i class="fas fa-chevron-up"></i><div class="dropdown-menu"><div class="dropdown-item active">-- 请选择 --</div><div class="dropdown-item" data-function="文生图">文生图</div><div class="dropdown-item" data-function="参考图">参考图</div><div class="dropdown-item" data-function="风格转换">风格转换</div><div class="dropdown-item" data-function="局部重绘">局部重绘</div><div class="dropdown-item" data-function="扩图">扩图</div><div class="dropdown-item" data-function="消除笔">消除笔</div><div class="dropdown-item" data-function="AI换脸">AI换脸</div><div class="dropdown-item" data-function="AI换装">AI换装</div></div></div>
+                                        </div>
+                                        <!-- 视频生成场景按钮组（默认隐藏） -->
+                                        <div class="scene-controls video-scene" style="display:none;">
+                                            <div class="control-dropdown"><span>视频生成</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu"><div class="dropdown-item" data-scene="agent">Agent模式</div><div class="dropdown-item" data-scene="image">图片生成</div><div class="dropdown-item active" data-scene="video">视频生成</div><div class="dropdown-item" data-scene="digital-human">数字人</div><div class="dropdown-item" data-scene="voiceover">配音生成</div></div></div>
+                                            <div class="control-dropdown model-dropdown" id="videoModelDropdown"><span>-- 请选择 --</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu model-dropdown-panel"><div class="model-panel-header">请选择模型</div><div class="model-option active" data-model-id="seedance_2.0_fast_vip"><div class="model-icon"><i class="fas fa-cube"></i></div><div class="model-info"><div class="model-name">Seedance 2.0 Fast VIP<span class="model-badge-diamond">&#10022;</span><span class="model-badge">New</span></div><div class="model-desc">极速推理，会员专属通道，音视文图均可参考</div></div><div class="model-check"><i class="fas fa-check"></i></div></div><div class="model-option" data-model-id="seedance_2.0_vip"><div class="model-icon"><i class="fas fa-cube"></i></div><div class="model-info"><div class="model-name">Seedance 2.0 VIP<span class="model-badge-diamond">&#10022;</span><span class="model-badge">New</span></div><div class="model-desc">全模态能力，会员专属通道，音视文图均可参考</div></div></div><div class="model-option" data-model-id="seedance_2.0_fast"><div class="model-icon"><i class="fas fa-cube"></i></div><div class="model-info"><div class="model-name">Seedance 2.0 Fast<span class="model-badge">New</span></div><div class="model-desc">高性价比，音视文图均可参考</div></div></div><div class="model-option" data-model-id="seedance_2.0"><div class="model-icon"><i class="fas fa-cube"></i></div><div class="model-info"><div class="model-name">Seedance 2.0<span class="model-badge-special">限免1次</span><span class="model-badge">New</span></div><div class="model-desc">全能王者，音视文图均可参考</div></div></div><div class="model-option" data-model-id="seedance_1.5_pro"><div class="model-icon"><i class="fas fa-cube"></i></div><div class="model-info"><div class="model-name">Seedance 1.5 Pro<span class="model-badge">New</span></div><div class="model-desc">音画同出，全新体验</div></div></div></div></div>
+                                            <div class="control-dropdown" id="videoRefMode"><span>全能参考</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu reference-dropdown-panel"><div class="dropdown-item active" data-ref-mode="all">全能参考</div><div class="dropdown-item" data-ref-mode="firstlast">首尾帧</div><div class="dropdown-item" data-ref-mode="multiframe">智能多帧</div></div></div>
+                                            <div class="control-dropdown ratio-resolution-dropdown" id="videoRatioResDropdown"><span>16:9</span><span class="res-label">2K</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu ratio-resolution-panel"><div class="panel-section"><div class="section-label">选择比例</div><div class="ratio-grid"><div class="ratio-item" data-ratio="banner"><span>横幅</span></div><div class="ratio-item" data-ratio="21:9"><span>21:9</span></div><div class="ratio-item active" data-ratio="16:9"><span>16:9</span></div><div class="ratio-item" data-ratio="3:2"><span>3:2</span></div><div class="ratio-item" data-ratio="4:3"><span>4:3</span></div><div class="ratio-item" data-ratio="1:1"><span>1:1</span></div><div class="ratio-item" data-ratio="3:4"><span>3:4</span></div><div class="ratio-item" data-ratio="2:3"><span>2:3</span></div><div class="ratio-item" data-ratio="9:16"><span>9:16</span></div></div></div><div class="panel-section"><div class="section-label">选择分辨率</div><div class="resolution-options"><div class="resolution-btn active" data-res="2K">高清2K</div><div class="resolution-btn" data-res="4K">超清4K<span class="resolution-badge">+</span></div></div></div><div class="panel-section"><div class="section-label">尺寸</div><div class="size-inputs"><span>W</span><input type="text" class="size-input" value="2048"><button class="swap-btn">⇄</button><span>H</span><input type="text" class="size-input" value="2048"><span>PX</span></div></div></div></div>
+                                            <div class="control-dropdown" id="videoDurationDropdown"><span>4s</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu duration-dropdown-panel"><div class="section-label">选择视频生成时长</div><div class="duration-item active" data-duration="4">4s</div><div class="duration-item" data-duration="5">5s</div><div class="duration-item" data-duration="6">6s</div><div class="duration-item" data-duration="7">7s</div><div class="duration-item" data-duration="8">8s</div><div class="duration-item" data-duration="9">9s</div><div class="duration-item" data-duration="10">10s</div></div></div>
+                                            <div class="control-dropdown type-selector"><span class="selected-type">视频</span><i class="fas fa-chevron-up"></i><div class="dropdown-menu"><div class="dropdown-item active" data-type="video">视频</div><div class="dropdown-item" data-type="image">图片</div></div></div>
+                                            <div class="control-dropdown"><i class="fas fa-at"></i></div>
+                                        </div>
+                                        <!-- 数字人场景按钮组（默认隐藏） -->
+                                        <div class="scene-controls digital-human-scene" style="display:none;">
+                                            <div class="control-dropdown"><span>数字人</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu"><div class="dropdown-item" data-scene="agent">Agent模式</div><div class="dropdown-item" data-scene="image">图片生成</div><div class="dropdown-item" data-scene="video">视频生成</div><div class="dropdown-item active" data-scene="digital-human">数字人</div><div class="dropdown-item" data-scene="voiceover">配音生成</div></div></div>
+                                            <div class="control-dropdown"><i class="fas fa-cube"></i><span>快速模式</span></div>
+                                            <div class="control-dropdown" id="uploadAudioBtn"><i class="fas fa-upload"></i><span>上传音频</span></div>
+                                        </div>
+                                        <!-- 配音生成场景按钮组 -->
+                                        <div class="scene-controls voiceover-scene" style="display:none;">
+                                            <div class="control-dropdown"><span>配音生成</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu"><div class="dropdown-item" data-scene="agent">Agent模式</div><div class="dropdown-item" data-scene="image">图片生成</div><div class="dropdown-item" data-scene="video">视频生成</div><div class="dropdown-item" data-scene="digital-human">数字人</div><div class="dropdown-item active" data-scene="voiceover">配音生成</div></div></div>
+                                            <div class="control-dropdown" id="cloneVoiceBtn"><i class="fas fa-microphone"></i><span>克隆声音</span></div>
+                                        </div>
+                                        <!-- Agent模式场景按钮组 -->
+                                        <div class="scene-controls agent-scene" style="display:none;">
+                                            <div class="control-dropdown"><span>Agent模式</span><i class="fas fa-chevron-down"></i><div class="dropdown-menu"><div class="dropdown-item active" data-scene="agent">Agent模式</div><div class="dropdown-item" data-scene="image">图片生成</div><div class="dropdown-item" data-scene="video">视频生成</div><div class="dropdown-item" data-scene="digital-human">数字人</div><div class="dropdown-item" data-scene="voiceover">配音生成</div></div></div>
+                                            <div class="control-dropdown custom-btn"><i class="fas fa-sliders-h"></i><span>自定义</span></div>
+                                            <div class="control-dropdown"><i class="fas fa-search"></i><span>灵感搜索</span></div>
+                                            <div class="control-dropdown"><i class="fas fa-lightbulb"></i><span>创意设计</span></div>
+                                            <div class="control-dropdown"><i class="fas fa-at"></i></div>
+                                        </div>
+                                    </div>
+                                    <div class="chat-controls-right">
+                                        <div class="control-dropdown" id="imageCountDropdown"><i class="fas fa-layer-group"></i><span>3 / 张</span><div class="dropdown-menu quantity-dropdown"><div class="qty-item active" data-count="3">3</div><div class="qty-item" data-count="4">4</div><div class="qty-item" data-count="5">5</div></div></div>
+                                        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <footer class="status-bar">
+            <div class="status-left"><div class="status-item"><span>视频大模型整合平台 v1.0.0</span></div></div>
+            <div class="status-center"><div class="status-item"><span class="status-dot"></span><span>在线</span></div></div>
+            <div class="status-right">
+                <div class="status-item" id="quotaDisplay"><span>额度：5000</span></div>
+                
+                <div class="status-item"><i class="fas fa-question-circle"></i><span>帮助</span></div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- 引入 API 对接脚本 -->
+    <script src="js/script.js"></script>
+    <script>
+        // 注意：原有的内嵌脚本（场景切换等）已移至 script.js 中，确保不冲突
+    </script>
+</body>
+</html>

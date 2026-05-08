@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频大模型整合平台 - 后台管理</title>
+    <link rel="stylesheet" href="css/pc_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="window-container">
+        <div class="title-bar">
+            <div class="title-bar-left">
+                <span class="title-bar-logo">视频大模型整合平台</span>
+            </div>
+            <div class="window-controls">
+                <button class="window-control minimize"></button>
+                <button class="window-control maximize"></button>
+                <button class="window-control close"></button>
+            </div>
+        </div>
+        
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <div class="sidebar-logo">
+                    <i class="fas fa-star"></i>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="pc_community.html" class="sidebar-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span class="tooltip">社区</span>
+                    </a>
+                    <a href="pc_generate.html" class="sidebar-nav-item">
+                        <i class="fas fa-magic"></i>
+                        <span class="tooltip">生成</span>
+                    </a>
+                    <a href="pc_assets.html" class="sidebar-nav-item">
+                        <i class="fas fa-box"></i>
+                        <span class="tooltip">资产</span>
+                    </a>
+                    <a href="pc_tools.html" class="sidebar-nav-item">
+                        <i class="fas fa-tools"></i>
+                        <span class="tooltip">全部工具</span>
+                    </a>
+                </nav>
+                <div class="sidebar-bottom">
+                    <a href="pc_admin.html" class="sidebar-nav-item active">
+                        <i class="fas fa-cog"></i>
+                        <span class="tooltip">管理</span>
+                    </a>
+                    <div class="sidebar-nav-item">
+                        <i class="fas fa-code"></i>
+                        <span class="tooltip">API</span>
+                    </div>
+                    <a href="pc_login.html" class="sidebar-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="tooltip">个人中心</span>
+                    </a>
+                </div>
+            </aside>
+            <main class="main-content" style="padding: 24px;">
+            <div class="admin-grid">
+                <aside class="admin-sidebar">
+                    <div class="admin-nav-item active">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>概览</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-users-cog"></i>
+                        <span>用户管理</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-coins"></i>
+                        <span>额度管理</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-boxes"></i>
+                        <span>资产管理</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>数据分析</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-bell"></i>
+                        <span>通知管理</span>
+                    </div>
+                    <div class="admin-nav-item">
+                        <i class="fas fa-cube"></i>
+                        <span>模型管理</span>
+                    </div>
+                </aside>
+                
+                <div class="admin-content">
+                    <div class="breadcrumb">
+                        <a href="pc_community.html">社区</a> &gt; <span id="current-section">管理中心</span>
+                    </div>
+                    
+                    <!-- 概览内容 -->
+                    <div id="overview-content" class="section-content active">
+                        <div class="dashboard-cards">
+                            <div class="dashboard-card">
+                                <div class="dashboard-icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="dashboard-info">
+                                    <h3>子账号数量</h3>
+                                    <span class="value">10</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dashboard-icon">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div class="dashboard-info">
+                                    <h3>剩余额度</h3>
+                                    <span class="value">5,000</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dashboard-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="dashboard-info">
+                                    <h3>资产数量</h3>
+                                    <span class="value">128</span>
+                                </div>
+                            </div>
+                            <div class="dashboard-card">
+                                <div class="dashboard-icon">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <div class="dashboard-info">
+                                    <h3>生成次数</h3>
+                                    <span class="value">256</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>企业信息</h2>
+                                <button class="btn btn-secondary">
+                                    <i class="fas fa-edit"></i>
+                                    编辑
+                                </button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                                <div>
+                                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">企业名称</p>
+                                    <p style="color: var(--text-primary);">xxx公司</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">子账号数</p>
+                                    <p style="color: var(--text-primary);">10</p>
+                                </div>
+                                <div>
+                                    <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">剩余额度</p>
+                                    <p style="color: var(--text-primary);">5,000</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>子账号列表</h2>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    添加子账号
+                                </button>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox"></th>
+                                        <th>ID</th>
+                                        <th>用户名</th>
+                                        <th>邮箱</th>
+                                        <th>权限</th>
+                                        <th>额度</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>1</td>
+                                        <td>user1</td>
+                                        <td>user1@example.com</td>
+                                        <td>成员</td>
+                                        <td>500</td>
+                                        <td><span class="status-badge active">正常</span></td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>2</td>
+                                        <td>user2</td>
+                                        <td>user2@example.com</td>
+                                        <td>成员</td>
+                                        <td>300</td>
+                                        <td><span class="status-badge active">正常</span></td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>3</td>
+                                        <td>user3</td>
+                                        <td>user3@example.com</td>
+                                        <td>成员</td>
+                                        <td>200</td>
+                                        <td><span class="status-badge inactive">禁用</span></td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination" style="margin-top: 16px;">
+                                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn active">1</button>
+                                <button class="page-btn">2</button>
+                                <button class="page-btn">3</button>
+                                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户管理内容 -->
+                    <div id="user-management-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>用户管理</h2>
+                                <div class="section-actions">
+                                    <button class="btn btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                        添加用户
+                                    </button>
+                                    <div class="search-box">
+                                        <input type="text" placeholder="搜索用户...">
+                                        <button class="search-btn"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox"></th>
+                                        <th>ID</th>
+                                        <th>用户名</th>
+                                        <th>邮箱</th>
+                                        <th>权限</th>
+                                        <th>额度</th>
+                                        <th>状态</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>1</td>
+                                        <td>user1</td>
+                                        <td>user1@example.com</td>
+                                        <td>成员</td>
+                                        <td>500</td>
+                                        <td><span class="status-badge active">正常</span></td>
+                                        <td>2026-04-01</td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>2</td>
+                                        <td>user2</td>
+                                        <td>user2@example.com</td>
+                                        <td>成员</td>
+                                        <td>300</td>
+                                        <td><span class="status-badge active">正常</span></td>
+                                        <td>2026-04-02</td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>3</td>
+                                        <td>user3</td>
+                                        <td>user3@example.com</td>
+                                        <td>成员</td>
+                                        <td>200</td>
+                                        <td><span class="status-badge inactive">禁用</span></td>
+                                        <td>2026-04-03</td>
+                                        <td>
+                                            <button class="table-action-btn">编辑</button>
+                                            <button class="table-action-btn danger">删除</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination" style="margin-top: 16px;">
+                                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn active">1</button>
+                                <button class="page-btn">2</button>
+                                <button class="page-btn">3</button>
+                                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 额度管理内容 -->
+                    <div id="quota-management-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>额度管理</h2>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    充值额度
+                                </button>
+                            </div>
+                            <div class="quota-overview">
+                                <div class="quota-card">
+                                    <h3>总额度</h3>
+                                    <span class="quota-value">10,000</span>
+                                </div>
+                                <div class="quota-card">
+                                    <h3>已使用</h3>
+                                    <span class="quota-value used">5,000</span>
+                                </div>
+                                <div class="quota-card">
+                                    <h3>剩余额度</h3>
+                                    <span class="quota-value remaining">5,000</span>
+                                </div>
+                            </div>
+                            <div class="admin-section">
+                                <h3>额度分配记录</h3>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>用户</th>
+                                            <th>分配额度</th>
+                                            <th>剩余额度</th>
+                                            <th>分配时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>user1</td>
+                                            <td>500</td>
+                                            <td>300</td>
+                                            <td>2026-04-01</td>
+                                            <td>
+                                                <button class="table-action-btn">调整</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>user2</td>
+                                            <td>300</td>
+                                            <td>150</td>
+                                            <td>2026-04-02</td>
+                                            <td>
+                                                <button class="table-action-btn">调整</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 资产管理内容 -->
+                    <div id="asset-management-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>资产管理</h2>
+                                <div class="section-actions">
+                                    <div class="filter-box">
+                                        <select>
+                                            <option>全部类型</option>
+                                            <option>图片</option>
+                                            <option>视频</option>
+                                            <option>音频</option>
+                                            <option>文案</option>
+                                        </select>
+                                    </div>
+                                    <div class="search-box">
+                                        <input type="text" placeholder="搜索资产...">
+                                        <button class="search-btn"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="asset-grid">
+                                <div class="asset-card">
+                                    <div class="asset-preview">
+                                        <img src="https://via.placeholder.com/200" alt="资产预览">
+                                    </div>
+                                    <div class="asset-info">
+                                        <h4>产品展示图1</h4>
+                                        <p class="asset-type">图片</p>
+                                        <p class="asset-owner">子账号：user1</p>
+                                        <p class="asset-date">2026-04-01</p>
+                                    </div>
+                                    <div class="asset-actions">
+                                        <button class="action-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn"><i class="fas fa-share"></i></button>
+                                        <button class="action-btn danger"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="asset-card">
+                                    <div class="asset-preview">
+                                        <img src="https://via.placeholder.com/200" alt="资产预览">
+                                    </div>
+                                    <div class="asset-info">
+                                        <h4>产品展示图2</h4>
+                                        <p class="asset-type">图片</p>
+                                        <p class="asset-owner">子账号：user2</p>
+                                        <p class="asset-date">2026-04-02</p>
+                                    </div>
+                                    <div class="asset-actions">
+                                        <button class="action-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn"><i class="fas fa-share"></i></button>
+                                        <button class="action-btn danger"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                <div class="asset-card">
+                                    <div class="asset-preview">
+                                        <img src="https://via.placeholder.com/200" alt="资产预览">
+                                    </div>
+                                    <div class="asset-info">
+                                        <h4>产品展示图3</h4>
+                                        <p class="asset-type">图片</p>
+                                        <p class="asset-owner">子账号：user3</p>
+                                        <p class="asset-date">2026-04-03</p>
+                                    </div>
+                                    <div class="asset-actions">
+                                        <button class="action-btn"><i class="fas fa-download"></i></button>
+                                        <button class="action-btn"><i class="fas fa-share"></i></button>
+                                        <button class="action-btn danger"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="pagination" style="margin-top: 16px;">
+                                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn active">1</button>
+                                <button class="page-btn">2</button>
+                                <button class="page-btn">3</button>
+                                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据分析内容 -->
+                    <div id="data-analysis-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>数据分析</h2>
+                                <div class="filter-box">
+                                    <select>
+                                        <option>最近7天</option>
+                                        <option>最近30天</option>
+                                        <option>最近90天</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="stats-overview">
+                                <div class="stat-card">
+                                    <h3>总生成次数</h3>
+                                    <span class="stat-value">256</span>
+                                </div>
+                                <div class="stat-card">
+                                    <h3>总额度使用</h3>
+                                    <span class="stat-value">5,000</span>
+                                </div>
+                            </div>
+                            <div class="analysis-cards">
+                                <div class="analysis-card">
+                                    <h3>生成次数</h3>
+                                    <div class="chart-placeholder">
+                                        <div class="chart-bar" style="height: 60%;"></div>
+                                        <div class="chart-bar" style="height: 80%;"></div>
+                                        <div class="chart-bar" style="height: 40%;"></div>
+                                        <div class="chart-bar" style="height: 90%;"></div>
+                                        <div class="chart-bar" style="height: 70%;"></div>
+                                        <div class="chart-bar" style="height: 50%;"></div>
+                                        <div class="chart-bar" style="height: 85%;"></div>
+                                    </div>
+                                </div>
+                                <div class="analysis-card">
+                                    <h3>额度使用</h3>
+                                    <div class="chart-placeholder">
+                                        <div class="chart-bar" style="height: 30%;"></div>
+                                        <div class="chart-bar" style="height: 50%;"></div>
+                                        <div class="chart-bar" style="height: 20%;"></div>
+                                        <div class="chart-bar" style="height: 60%;"></div>
+                                        <div class="chart-bar" style="height: 40%;"></div>
+                                        <div class="chart-bar" style="height: 70%;"></div>
+                                        <div class="chart-bar" style="height: 35%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-section">
+                                <h3>用户行为分析</h3>
+                                <div class="behavior-stats">
+                                    <div class="stat-item">
+                                        <h4>活跃用户</h4>
+                                        <span>8</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h4>平均生成次数</h4>
+                                        <span>32</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h4>平均额度使用</h4>
+                                        <span>500</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <h4>转化率</h4>
+                                        <span>85%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="admin-section">
+                                <h3>子账号额度使用情况</h3>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>子账号</th>
+                                            <th>总额度</th>
+                                            <th>已使用</th>
+                                            <th>剩余</th>
+                                            <th>使用率</th>
+                                            <th>生成次数</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>user1</td>
+                                            <td>500</td>
+                                            <td>200</td>
+                                            <td>300</td>
+                                            <td>40%</td>
+                                            <td>45</td>
+                                        </tr>
+                                        <tr>
+                                            <td>user2</td>
+                                            <td>300</td>
+                                            <td>150</td>
+                                            <td>150</td>
+                                            <td>50%</td>
+                                            <td>32</td>
+                                        </tr>
+                                        <tr>
+                                            <td>user3</td>
+                                            <td>200</td>
+                                            <td>100</td>
+                                            <td>100</td>
+                                            <td>50%</td>
+                                            <td>28</td>
+                                        </tr>
+                                        <tr>
+                                            <td>user4</td>
+                                            <td>400</td>
+                                            <td>250</td>
+                                            <td>150</td>
+                                            <td>62.5%</td>
+                                            <td>52</td>
+                                        </tr>
+                                        <tr>
+                                            <td>user5</td>
+                                            <td>350</td>
+                                            <td>180</td>
+                                            <td>170</td>
+                                            <td>51.4%</td>
+                                            <td>38</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 通知管理内容 -->
+                    <div id="notification-management-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header">
+                                <h2>通知管理</h2>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    发送通知
+                                </button>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>标题</th>
+                                        <th>类型</th>
+                                        <th>发送时间</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>系统更新通知</td>
+                                        <td>系统</td>
+                                        <td>2026-04-01</td>
+                                        <td><span class="status-badge active">已发送</span></td>
+                                        <td>
+                                            <button class="table-action-btn">查看</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>额度不足提醒</td>
+                                        <td>提醒</td>
+                                        <td>2026-04-02</td>
+                                        <td><span class="status-badge active">已发送</span></td>
+                                        <td>
+                                            <button class="table-action-btn">查看</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>新功能上线</td>
+                                        <td>系统</td>
+                                        <td>2026-04-03</td>
+                                        <td><span class="status-badge active">已发送</span></td>
+                                        <td>
+                                            <button class="table-action-btn">查看</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination" style="margin-top: 16px;">
+                                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn active">1</button>
+                                <button class="page-btn">2</button>
+                                <button class="page-btn">3</button>
+                                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 模型管理内容 -->
+                    <div id="model-management-content" class="section-content">
+                        <div class="admin-section">
+                            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                                <div>
+                                    <h2>模型管理</h2>
+                                    <p style="color: var(--text-secondary); font-size: 14px;">管理子账号的模型使用情况</p>
+                                </div>
+                                <div class="search-box" style="flex-shrink: 0;">
+                                    <input type="text" placeholder="搜索账号..." style="padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; width: 200px;">
+                                    <button class="search-btn" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px;"><i class="fas fa-search"></i></button>
+                                </div>
+                            </div>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox"></th>
+                                        <th>账号</th>
+                                        <th>是否自主更换模型</th>
+                                        <th>一级优先使用</th>
+                                        <th>二级优先使用</th>
+                                        <th>三级优先使用</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>user1</td>
+                                        <td>
+                                            <label class="switch">
+                                                <input type="checkbox" checked>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option selected>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option>质量</option>
+                                                <option selected>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option selected>价格</option>
+                                                <option>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="table-action-btn">保存</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>user2</td>
+                                        <td>
+                                            <label class="switch">
+                                                <input type="checkbox">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option selected>价格</option>
+                                                <option>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option selected>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option>质量</option>
+                                                <option selected>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="table-action-btn">保存</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>user3</td>
+                                        <td>
+                                            <label class="switch">
+                                                <input type="checkbox" checked>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option>质量</option>
+                                                <option selected>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option selected>价格</option>
+                                                <option>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option selected>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="table-action-btn">保存</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>user4</td>
+                                        <td>
+                                            <label class="switch">
+                                                <input type="checkbox">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option selected>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option>质量</option>
+                                                <option selected>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option selected>价格</option>
+                                                <option>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="table-action-btn">保存</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td>user5</td>
+                                        <td>
+                                            <label class="switch">
+                                                <input type="checkbox" checked>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option selected>价格</option>
+                                                <option>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option selected>质量</option>
+                                                <option>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="priority-select">
+                                                <option>价格</option>
+                                                <option>质量</option>
+                                                <option selected>速度</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="table-action-btn">保存</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination" style="margin-top: 16px;">
+                                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                                <button class="page-btn active">1</button>
+                                <button class="page-btn">2</button>
+                                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </main>
+        </div>
+        
+        <footer class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <span>企业额度：5,000</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-model">模型：Auto</span>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item">
+                    <span class="status-dot"></span>
+                    <span>在线</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>帮助</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="js/script.js"></script>
+    <script>
+        // 管理页面导航切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.admin-nav-item');
+            const sectionContents = document.querySelectorAll('.section-content');
+            const currentSection = document.getElementById('current-section');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除所有导航项的active类
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    // 添加当前导航项的active类
+                    this.classList.add('active');
+                    
+                    // 获取导航项文本
+                    const sectionName = this.querySelector('span').textContent;
+                    // 更新面包屑
+                    currentSection.textContent = sectionName;
+                    
+                    // 隐藏所有内容区域
+                    sectionContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 显示对应内容区域
+                    let contentId;
+                    switch(sectionName) {
+                        case '概览':
+                            contentId = 'overview-content';
+                            break;
+                        case '用户管理':
+                            contentId = 'user-management-content';
+                            break;
+                        case '额度管理':
+                            contentId = 'quota-management-content';
+                            break;
+                        case '资产管理':
+                            contentId = 'asset-management-content';
+                            break;
+                        case '数据分析':
+                            contentId = 'data-analysis-content';
+                            break;
+                        case '通知管理':
+                            contentId = 'notification-management-content';
+                            break;
+                        case '模型管理':
+                            contentId = 'model-management-content';
+                            break;
+                    }
+                    
+                    if (contentId) {
+                        document.getElementById(contentId).classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

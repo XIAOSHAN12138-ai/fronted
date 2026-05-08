@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频大模型整合平台 - 资产</title>
+    <link rel="stylesheet" href="css/pc_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="window-container">
+        <div class="title-bar">
+            <div class="title-bar-left">
+                <span class="title-bar-logo">视频大模型整合平台</span>
+            </div>
+            <div class="window-controls">
+                <button class="window-control minimize"></button>
+                <button class="window-control maximize"></button>
+                <button class="window-control close"></button>
+            </div>
+        </div>
+        
+        <div class="content-wrapper">
+            <aside class="sidebar">
+                <div class="sidebar-logo">
+                    <i class="fas fa-star"></i>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="pc_community.html" class="sidebar-nav-item">
+                        <i class="fas fa-users"></i>
+                        <span class="tooltip">社区</span>
+                    </a>
+                    <a href="pc_generate.html" class="sidebar-nav-item">
+                        <i class="fas fa-magic"></i>
+                        <span class="tooltip">生成</span>
+                    </a>
+                    <a href="pc_assets.html" class="sidebar-nav-item active">
+                        <i class="fas fa-box"></i>
+                        <span class="tooltip">资产</span>
+                    </a>
+                    <a href="pc_tools.html" class="sidebar-nav-item">
+                        <i class="fas fa-tools"></i>
+                        <span class="tooltip">全部工具</span>
+                    </a>
+                </nav>
+                <div class="sidebar-bottom">
+                    <a href="pc_admin.html" class="sidebar-nav-item">
+                        <i class="fas fa-cog"></i>
+                        <span class="tooltip">管理</span>
+                    </a>
+                    <div class="sidebar-nav-item">
+                        <i class="fas fa-code"></i>
+                        <span class="tooltip">API</span>
+                    </div>
+                    <a href="pc_login.html" class="sidebar-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="tooltip">个人中心</span>
+                    </a>
+                </div>
+            </aside>
+            <main class="main-content" style="padding: 24px;">
+            <div class="assets-header">
+                <h1 class="assets-title">资产库</h1>
+                <div class="assets-actions">
+                    <input type="text" class="search-input" placeholder="搜索资产...">
+                    <select class="filter-select">
+                        <option>所有类型</option>
+                        <option>图片</option>
+                        <option>视频</option>
+                        <option>音频</option>
+                        <option>文案</option>
+                    </select>
+                    <select class="sort-select">
+                        <option>最新</option>
+                        <option>最旧</option>
+                        <option>名称</option>
+                    </select>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-cog"></i>
+                        批量操作
+                    </button>
+                </div>
+            </div>
+            
+            <div class="assets-grid">
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">产品展示视频</h3>
+                        <p class="asset-size">2026-04-17 14:30</p>
+                        <p class="asset-size">模型：模型1</p>
+                    </div>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">AI短剧片段</h3>
+                        <p class="asset-size">2026-04-16 10:15</p>
+                        <p class="asset-size">模型：模型2</p>
+                    </div>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">营销海报</h3>
+                        <p class="asset-size">2026-04-15 16:45</p>
+                        <p class="asset-size">模型：模型1</p>
+                    </div>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">电商产品图片</h3>
+                        <p class="asset-size">2026-04-14 09:20</p>
+                        <p class="asset-size">模型：模型3</p>
+                    </div>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">品牌宣传视频</h3>
+                        <p class="asset-size">2026-04-13 11:30</p>
+                        <p class="asset-size">模型：模型2</p>
+                    </div>
+                </div>
+                
+                <div class="asset-card">
+                    <div class="asset-image">
+                        <img src="https://via.placeholder.com/200x300" alt="资产预览">
+                        <div class="asset-overlay">
+                            <button class="asset-overlay-btn"><i class="fas fa-eye"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-edit"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-share"></i></button>
+                            <button class="asset-overlay-btn"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="asset-info">
+                        <h3 class="asset-name">社交媒体图片</h3>
+                        <p class="asset-size">2026-04-12 15:45</p>
+                        <p class="asset-size">模型：模型1</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pagination">
+                <button class="page-btn disabled"><i class="fas fa-chevron-left"></i></button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">...</button>
+                <button class="page-btn">10</button>
+                <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            </main>
+        </div>
+        
+        <footer class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <span>额度：5,000</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-model">模型：Auto</span>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item">
+                    <span class="status-dot"></span>
+                    <span>在线</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>帮助</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="js/script.js"></script>
+</body>
+</html>
