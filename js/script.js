@@ -1039,9 +1039,9 @@ function initSceneSwitch() {
             } else {
                 document.querySelector('.image-scene').style.display = 'flex';
             }
-            // 更新 active 样式
+            // 更新所有场景中的 active 样式
             sceneItems.forEach(si => si.classList.remove('active'));
-            item.classList.add('active');
+            document.querySelectorAll(`.dropdown-item[data-scene="${scene}"]`).forEach(si => si.classList.add('active'));
             item.closest('.dropdown-menu').style.display = 'none';
         });
     });
