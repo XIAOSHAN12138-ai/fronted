@@ -531,18 +531,66 @@ function initSendButton() {
         return;
     }
 
-    // 移除可能存在的旧监听器，避免重复绑定
-    sendBtn.removeEventListener('click', handleSend);
-    sendBtn.addEventListener('click', handleSend);
+    let currentAbortController = null;
+    let isSending = false;
+    let currentTaskId = null;
 
-    // 也支持回车键发送
+    function setButtonState(sending) {
+        isSending = sending;
+        if (sending) {
+            sendBtn.classList.add('sending');
+            sendBtn.querySelector('i').className = 'fas fa-stop';
+        } else {
+            sendBtn.classList.remove('sending');
+            sendBtn.querySelector('i').className = 'fas fa-paper-plane';
+            currentAbortController = null;
+            currentTaskId = null;
+        }
+    }
+
+    sendBtn.removeEventListener('click', handleSendClick);
+    sendBtn.addEventListener('click', handleSendClick);
+
     chatInput.removeEventListener('keypress', handleKeyPress);
     chatInput.addEventListener('keypress', handleKeyPress);
 
     function handleKeyPress(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
+            handleSendClick();
+        }
+    }
+
+    function handleSendClick() {
+        if (isSending) {
+            handleStop();
+        } else {
             handleSend();
+        }
+    }
+
+    function handleStop() {
+        if (currentAbortController) {
+            currentAbortController.abort();
+        }
+        if (currentTaskId) {
+            cancelTask(currentTaskId);
+        }
+        setButtonState(false);
+        showToast('已中止生成', 'info');
+    }
+
+    async function cancelTask(taskId) {
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            await fetch(`${API_CONFIG.BASE_URL}/generate/task/${taskId}/cancel`, {
+                method: 'POST',
+                headers
+            });
+        } catch (e) {
+            console.warn('取消任务请求失败:', e);
         }
     }
 
@@ -564,24 +612,33 @@ function initSendButton() {
         const loadingMsg = addLoadingMessage(modelName);
 
         // 调用生成接口，端点由 buildGenerateRequest() 返回
+        currentAbortController = new AbortController();
+        setButtonState(true);
+
         try {
             const sceneType = getActiveSceneType();
             const requestBody = buildGenerateRequest(prompt, sceneType);
-            const response = await postJson(requestBody.endpoint, requestBody.body);
+            const response = await postJson(requestBody.endpoint, requestBody.body, currentAbortController.signal);
             if (response.code !== 200) {
                 throw new Error(response.message || '生成接口返回异常');
             }
 
-            const taskId = response.data?.task_id;
-            if (!taskId) {
+            currentTaskId = response.data?.task_id;
+            if (!currentTaskId) {
                 throw new Error('后端未返回任务ID');
             }
 
-            const taskResult = await pollTaskStatus(taskId, 20);
+            const taskResult = await pollTaskStatus(currentTaskId, 20, currentAbortController.signal);
             renderTaskResult(loadingMsg, taskResult, sceneType);
         } catch (error) {
-            console.error('生成失败', error);
-            updateLoadingToResult(loadingMsg, 'error', { message: error.message || '生成失败，请稍后重试' });
+            if (error.name === 'AbortError') {
+                updateLoadingToResult(loadingMsg, 'text', { feedback: '生成已中止' });
+            } else {
+                console.error('生成失败', error);
+                updateLoadingToResult(loadingMsg, 'error', { message: error.message || '生成失败，请稍后重试' });
+            }
+        } finally {
+            setButtonState(false);
         }
     }
 
@@ -726,7 +783,7 @@ function initSendButton() {
 
     // ✅ 【API请求封装】通用POST请求函数
     //    使用 API_CONFIG.BASE_URL 作为基础路径
-    async function postJson(path, body) {
+    async function postJson(path, body, signal = null) {
         const token = localStorage.getItem('token');
         const headers = {
             'Content-Type': 'application/json'
@@ -738,7 +795,8 @@ function initSendButton() {
         const response = await fetch(url, {
             method: 'POST',
             headers,
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal
         });
         if (!response.ok) {
             const text = await response.text();
@@ -749,16 +807,20 @@ function initSendButton() {
 
     // ✅ 【API - 任务轮询】轮询查询生成任务状态
     //    轮询 GET /generate/task/{taskId}，每2秒一次，最多20次
-    async function pollTaskStatus(taskId, maxAttempts = 20) {
+    async function pollTaskStatus(taskId, maxAttempts = 20, signal = null) {
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (signal?.aborted) {
+                throw new DOMException('任务轮询已中止', 'AbortError');
+            }
             const response = await fetch(`${API_CONFIG.BASE_URL}/generate/task/${taskId}`, {
                 method: 'GET',
-                headers
+                headers,
+                signal
             });
             if (!response.ok) {
                 const text = await response.text();

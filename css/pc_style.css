@@ -943,6 +943,14 @@ body {
     transform: translateY(-1px);
 }
 
+.send-btn.sending {
+    background-color: #ef4444;
+}
+
+.send-btn.sending:hover {
+    background-color: #dc2626;
+}
+
 /* 对话内容样式 */
 .chat-messages {
     max-height: 500px;
