@@ -3,12 +3,13 @@
 // 
 // 已实现的接口：
 //    1. GET  /api/v1/models              → 获取模型列表（initModels）
-//    2. POST /api/v1/generate/*          → 各类生成接口（postJson）
-//    3. GET  /api/v1/generate/task/{id}  → 任务状态查询（pollTaskStatus）
+//    2. POST /api/v1/generate            → 统一生成接口（postJson）
+//    3. GET  /api/v1/tasks/{task_id}     → 任务状态查询（pollTaskStatus）
+//    4. POST /api/v1/tasks/{task_id}/cancel → 取消任务（cancelTask）
 // 
 // 配置方式：
 //    - 修改 API_CONFIG.BASE_URL 为真实后端地址
-//    - 当前默认: '/api/v1' (相对路径，同源部署)
+//    - 当前默认: 'http://localhost:8003/api/v1'
 //    - 生产环境: 'https://your-backend.com/api/v1'
 // 
 // 待实现接口：
@@ -35,6 +36,10 @@ let globalModels = {
     video_models: [],
     voices: []
 };
+
+let uploadedFiles = [];
+
+const HISTORY_STORAGE_KEY = 'platform_generated_files';
 
 // ======================== 全局辅助函数 ========================
 function showToast(msg, type = 'info') {
@@ -122,8 +127,6 @@ function getCurrentParams() {
     if (scene) {
         if (scene.classList.contains('video-scene')) sceneType = 'video';
         else if (scene.classList.contains('digital-human-scene')) sceneType = 'digital-human';
-        else if (scene.classList.contains('voiceover-scene')) sceneType = 'voiceover';
-        else if (scene.classList.contains('agent-scene')) sceneType = 'agent';
     }
     
     let ratio = '1:1';
@@ -511,6 +514,179 @@ function initLoginForm() {
     }
 }
 
+// ======================== 文件上传与预览 ========================
+function initFileUpload() {
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadMenu = document.getElementById('uploadMenu');
+    const localFileInput = document.getElementById('localFileInput');
+    const previewContainer = document.getElementById('uploadedFilesPreview');
+    const historyModalOverlay = document.getElementById('historyModalOverlay');
+    const historyModalClose = document.getElementById('historyModalClose');
+    const historyModalBody = document.getElementById('historyModalBody');
+    const historyConfirmBtn = document.getElementById('historyConfirmBtn');
+
+    if (!uploadBtn || !previewContainer) return;
+
+    let selectedHistoryFiles = [];
+
+    uploadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        uploadMenu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+        uploadMenu.classList.remove('show');
+    });
+
+    uploadMenu.querySelector('[data-action="local"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        uploadMenu.classList.remove('show');
+        localFileInput.click();
+    });
+
+    uploadMenu.querySelector('[data-action="history"]')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        uploadMenu.classList.remove('show');
+        openHistoryModal();
+    });
+
+    localFileInput.addEventListener('change', () => {
+        const files = Array.from(localFileInput.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const fileType = file.type.startsWith('image/') ? 'image' :
+                    file.type.startsWith('video/') ? 'video' :
+                    file.type.startsWith('audio/') ? 'audio' : 'other';
+                uploadedFiles.push({
+                    id: 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                    type: fileType,
+                    url: reader.result,
+                    name: file.name,
+                    purpose: 'reference'
+                });
+                renderFilePreviews();
+            };
+            reader.readAsDataURL(file);
+        });
+        localFileInput.value = '';
+    });
+
+    function openHistoryModal() {
+        selectedHistoryFiles = [];
+        renderHistoryFiles();
+        historyModalOverlay.style.display = 'flex';
+    }
+
+    function renderHistoryFiles() {
+        const history = getHistoryFiles();
+        if (history.length === 0) {
+            historyModalBody.innerHTML = '<div class="history-empty">暂无历史生成文件</div>';
+            return;
+        }
+        historyModalBody.innerHTML = history.map(file => {
+            const isSelected = selectedHistoryFiles.some(f => f.id === file.id);
+            const mediaContent = file.type === 'image'
+                ? `<img src="${file.url}" alt="${file.name || ''}">`
+                : `<video src="${file.url}" muted></video>`;
+            return `<div class="history-file-item${isSelected ? ' selected' : ''}" data-file-id="${file.id}">
+                ${mediaContent}
+            </div>`;
+        }).join('');
+
+        historyModalBody.querySelectorAll('.history-file-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const fileId = item.getAttribute('data-file-id');
+                const file = history.find(f => f.id === fileId);
+                if (!file) return;
+                const idx = selectedHistoryFiles.findIndex(f => f.id === fileId);
+                if (idx >= 0) {
+                    selectedHistoryFiles.splice(idx, 1);
+                    item.classList.remove('selected');
+                } else {
+                    selectedHistoryFiles.push(file);
+                    item.classList.add('selected');
+                }
+            });
+        });
+    }
+
+    historyConfirmBtn.addEventListener('click', () => {
+        selectedHistoryFiles.forEach(file => {
+            if (!uploadedFiles.some(f => f.id === file.id)) {
+                uploadedFiles.push({ ...file, purpose: 'reference' });
+            }
+        });
+        renderFilePreviews();
+        historyModalOverlay.style.display = 'none';
+    });
+
+    historyModalClose.addEventListener('click', () => {
+        historyModalOverlay.style.display = 'none';
+    });
+
+    historyModalOverlay.addEventListener('click', (e) => {
+        if (e.target === historyModalOverlay) {
+            historyModalOverlay.style.display = 'none';
+        }
+    });
+
+    function renderFilePreviews() {
+        if (uploadedFiles.length === 0) {
+            previewContainer.style.display = 'none';
+            previewContainer.innerHTML = '';
+            return;
+        }
+        previewContainer.style.display = 'flex';
+        previewContainer.innerHTML = uploadedFiles.map((file, index) => {
+            let content;
+            if (file.type === 'image') {
+                content = `<img src="${file.url}" alt="${file.name || ''}">`;
+            } else if (file.type === 'video') {
+                content = `<video src="${file.url}" muted></video>`;
+            } else if (file.type === 'audio') {
+                content = `<div class="file-type-icon"><i class="fas fa-volume-up"></i></div>`;
+            } else {
+                content = `<div class="file-type-icon"><i class="fas fa-file"></i></div>`;
+            }
+            return `<div class="file-preview-item" data-file-index="${index}">
+                ${content}
+                <button class="file-preview-delete" data-delete-index="${index}">&times;</button>
+            </div>`;
+        }).join('');
+
+        previewContainer.querySelectorAll('.file-preview-delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.getAttribute('data-delete-index'), 10);
+                uploadedFiles.splice(idx, 1);
+                renderFilePreviews();
+            });
+        });
+    }
+}
+
+function getHistoryFiles() {
+    try {
+        const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function addToHistory(file) {
+    const history = getHistoryFiles();
+    history.unshift({
+        id: 'hist_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        type: file.type || 'image',
+        url: file.url || file,
+        name: file.name || ''
+    });
+    if (history.length > 50) history.length = 50;
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
 // ======================== 生成页面核心：发送按钮与消息反馈 ========================
 function initSendButton() {
     // 查找发送按钮（class="send-btn"）和聊天容器
@@ -585,7 +761,7 @@ function initSendButton() {
             const token = localStorage.getItem('token');
             const headers = { 'Content-Type': 'application/json' };
             if (token) headers['Authorization'] = `Bearer ${token}`;
-            await fetch(`${API_CONFIG.BASE_URL}/generate/task/${taskId}/cancel`, {
+            await fetch(`${API_CONFIG.BASE_URL}/tasks/${taskId}/cancel`, {
                 method: 'POST',
                 headers
             });
@@ -607,6 +783,9 @@ function initSendButton() {
         addUserMessage(prompt);
         // 清空输入框
         chatInput.value = '';
+        // 清空已上传文件
+        uploadedFiles = [];
+        renderFilePreviewsAfterSend();
 
         // 2. 添加“生成中...”的 bot 消息
         const loadingMsg = addLoadingMessage(modelName);
@@ -642,6 +821,14 @@ function initSendButton() {
         }
     }
 
+    function renderFilePreviewsAfterSend() {
+        const previewContainer = document.getElementById('uploadedFilesPreview');
+        if (previewContainer) {
+            previewContainer.style.display = 'none';
+            previewContainer.innerHTML = '';
+        }
+    }
+
     // 获取当前可见场景中的选中模型名称
     function getCurrentModelName() {
         const visibleScene = Array.from(document.querySelectorAll('.scene-controls')).find(scene => {
@@ -663,8 +850,6 @@ function initSendButton() {
         if (!scene) return 'image';
         if (scene.classList.contains('video-scene')) return 'video';
         if (scene.classList.contains('digital-human-scene')) return 'digital-human';
-        if (scene.classList.contains('voiceover-scene')) return 'voiceover';
-        if (scene.classList.contains('agent-scene')) return 'agent';
         return 'image';
     }
 
@@ -691,7 +876,33 @@ function initSendButton() {
     }
 
     function getSelectedDuration() {
-        return parseInt(document.querySelector('.duration-item.active')?.getAttribute('data-duration') || '4', 10);
+        return parseInt(document.querySelector('.dropdown-item.active[data-duration]')?.getAttribute('data-duration') || '4', 10);
+    }
+
+    function getSelectedRefMode() {
+        return document.querySelector('.dropdown-item.active[data-ref-mode]')?.getAttribute('data-ref-mode') || 'all';
+    }
+
+    function mapRefModeToFeature(refMode) {
+        const featureMap = {
+            'all': 'global_reference',
+            'firstlast': 'first_last_frame',
+            'multiframe': 'multi_reference',
+            'text-to-video': 'text_to_video',
+            'object-repair': 'global_reference',
+            'color-restore': 'global_reference',
+            'smart-remove': 'global_reference',
+            'object-replace': 'global_reference',
+            'effect-replicate': 'template_effect',
+            'ai-outfit': 'global_reference',
+            'scene-replace': 'global_reference',
+            'local-adjust': 'global_reference',
+            'motion-imitate': 'motion_control',
+            'first-frame-gen': 'global_reference',
+            'lip-sync': 'lip_sync',
+            'style-replace': 'template_effect'
+        };
+        return featureMap[refMode] || 'global_reference';
     }
 
     // ⚠️ 【模拟数据 - 硬编码音色】当前固定返回 'voice_001'，真实后端应从 GET /api/v1/models 获取可用音色列表
@@ -699,86 +910,106 @@ function initSendButton() {
         return 'voice_001';
     }
 
-    function getSelectedAgentType() {
-        const text = document.querySelector('.selected-type')?.textContent.trim().toLowerCase() || 'image';
-        if (text.includes('图') || text.includes('image')) return 'image';
-        if (text.includes('视') || text.includes('video')) return 'video';
-        return 'image';
-    }
-
-    // ⚠️ 【模拟API - 请求构建器】根据场景类型构建不同的API请求
-    //    以下5个端点当前均为模拟实现，替换真实后端时需确保请求/响应格式一致：
-    //    - /generate/image          → POST 图片生成
-    //    - /generate/video/text-to-video → POST 文生视频
-    //    - /generate/digital-human  → POST 数字人生成
-    //    - /generate/voiceover      → POST 配音生成
-    //    - /generate/agent          → POST Agent模式生成
-    //    默认模型等参数当前为硬编码，真实后端应从 GET /api/v1/models 动态获取
+    // ✅ 【API - 请求构建器】根据场景类型构建统一的生成请求
+    //    统一端点: POST /api/v1/generate
+    //    请求格式: { output_type, model, feature, parameters, prompt, input_files }
     function buildGenerateRequest(prompt, sceneType) {
         const modelId = getSelectedModelId();
         const ratio = getSelectedRatio();
         const resolution = getSelectedResolution();
+        const inputFiles = buildInputFiles();
 
         if (sceneType === 'video') {
+            const refMode = getSelectedRefMode();
+            const feature = mapRefModeToFeature(refMode);
+            const params = {
+                resolution: resolution || '1080P',
+                duration: getSelectedDuration(),
+                ratio: ratio || '16:9'
+            };
+            if (feature === 'lip_sync') {
+                params.face_id = 0;
+                params.audio_start_time = 0;
+                params.audio_volume = 1.0;
+                params.original_audio_volume = 0.0;
+            }
+            if (feature === 'motion_control') {
+                params.keep_original_sound = 'no';
+            }
+            if (feature === 'template_effect') {
+                params.template = 'morphlab';
+            }
             return {
-                endpoint: '/generate/video/text-to-video',
+                endpoint: '/generate',
                 body: {
-                    prompt,
-                    model: modelId || 'seedance_2.0_fast',
-                    ratio,
-                    resolution,
-                    duration: getSelectedDuration()
+                    output_type: 'video',
+                    model: modelId || 'kling_3.0',
+                    feature: feature,
+                    parameters: params,
+                    prompt: prompt,
+                    input_files: inputFiles
                 }
             };
         }
 
         if (sceneType === 'digital-human') {
             return {
-                endpoint: '/generate/digital-human',
+                endpoint: '/generate',
                 body: {
-                    character_image: '',
-                    voice_id: getSelectedVoiceId(),
-                    speech_content: document.querySelector('#speechContent')?.value.trim() || prompt,
-                    action_description: document.querySelector('#actionDesc')?.value.trim() || ''
-                }
-            };
-        }
-
-        if (sceneType === 'voiceover') {
-            return {
-                endpoint: '/generate/voiceover',
-                body: {
-                    voice_id: getSelectedVoiceId(),
-                    content: document.querySelector('#voiceoverContent')?.value.trim() || prompt,
-                    speed: 1.0,
-                    pitch: 1.0
-                }
-            };
-        }
-
-        if (sceneType === 'agent') {
-            return {
-                endpoint: '/generate/agent',
-                body: {
-                    prompt,
-                    type: getSelectedAgentType(),
-                    model: modelId || 'image_5.0_lite',
-                    ratio,
-                    resolution
+                    output_type: 'digital_human',
+                    model: modelId || 'kling_2.6',
+                    feature: 'digital_human',
+                    parameters: {
+                        voice_id: getSelectedVoiceId(),
+                        action_description: document.querySelector('#actionDesc')?.value.trim() || ''
+                    },
+                    prompt: document.querySelector('#speechContent')?.value.trim() || prompt,
+                    input_files: inputFiles
                 }
             };
         }
 
         return {
-            endpoint: '/generate/image',
+            endpoint: '/generate',
             body: {
-                prompt,
+                output_type: 'image',
                 model: modelId || 'image_5.0_lite',
-                ratio,
-                resolution,
-                count: getSelectedCount()
+                feature: getSelectedImageFeature(),
+                parameters: {
+                    resolution: resolution || '1080P',
+                    ratio: ratio || '1:1',
+                    count: getSelectedCount()
+                },
+                prompt: prompt,
+                input_files: inputFiles
             }
         };
+    }
+
+    function buildInputFiles() {
+        return uploadedFiles.map(file => ({
+            type: file.type,
+            url: file.url,
+            purpose: file.purpose || 'reference',
+            object_id: file.object_id || undefined
+        }));
+    }
+
+    function getSelectedImageFeature() {
+        const activeFunc = document.querySelector('.function-selector .dropdown-item.active');
+        if (!activeFunc) return 'text_to_image';
+        const funcName = activeFunc.getAttribute('data-function') || activeFunc.textContent.trim();
+        const featureMap = {
+            '文生图': 'text_to_image',
+            '参考图': 'image_reference',
+            '风格转换': 'style_transfer',
+            '局部重绘': 'inpainting',
+            '扩图': 'outpainting',
+            '消除笔': 'object_removal',
+            'AI换脸': 'face_swap',
+            'AI换装': 'outfit_change'
+        };
+        return featureMap[funcName] || 'text_to_image';
     }
 
     // ✅ 【API请求封装】通用POST请求函数
@@ -806,7 +1037,7 @@ function initSendButton() {
     }
 
     // ✅ 【API - 任务轮询】轮询查询生成任务状态
-    //    轮询 GET /generate/task/{taskId}，每2秒一次，最多20次
+    //    轮询 GET /tasks/{taskId}，每2秒一次，最多20次
     async function pollTaskStatus(taskId, maxAttempts = 20, signal = null) {
         const token = localStorage.getItem('token');
         const headers = {};
@@ -817,7 +1048,7 @@ function initSendButton() {
             if (signal?.aborted) {
                 throw new DOMException('任务轮询已中止', 'AbortError');
             }
-            const response = await fetch(`${API_CONFIG.BASE_URL}/generate/task/${taskId}`, {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/tasks/${taskId}`, {
                 method: 'GET',
                 headers,
                 signal
@@ -842,34 +1073,30 @@ function initSendButton() {
         throw new Error('任务超时，请稍后查看生成结果');
     }
 
-    // ⚠️ 【模拟数据 - 结果渲染】根据后端返回的 task result 渲染生成结果
-    //    期望的 result 数据结构（需与真实后端保持一致）：
+    // ✅ 【API - 结果渲染】根据后端返回的 task result 渲染生成结果
+    //    期望的 result 数据结构（与 API 文档一致）：
     //    - image:    { images: [{ id, url }] }
-    //    - video:    { video: { id, url, duration } }
-    //    - voiceover:{ audio: { id, url } }
-    //    - 其他:     { message: string }
+    //    - video:    { video_url, thumbnail_url }
+    //    - digital_human: { video_url, thumbnail_url }
     function renderTaskResult(loadingElem, taskResult, sceneType) {
         const result = taskResult.result || {};
         const modelName = getCurrentModelName();
         const feedbackText = `模型 ${modelName} 已生成完成，任务ID：${taskResult.task_id}`;
-        if (sceneType === 'video' && result.video?.url) {
+        if ((sceneType === 'video' || sceneType === 'digital-human') && result.video_url) {
+            addToHistory({ type: 'video', url: result.video_url, name: taskResult.task_id });
             updateLoadingToResult(loadingElem, 'video', {
                 feedback: feedbackText,
-                videoUrl: result.video.url
+                videoUrl: result.video_url
             });
             return;
         }
         if (sceneType === 'image' && Array.isArray(result.images)) {
+            result.images.forEach(img => {
+                addToHistory({ type: 'image', url: img.url || img, name: img.id || '' });
+            });
             updateLoadingToResult(loadingElem, 'image', {
                 feedback: feedbackText,
                 images: result.images.map(img => img.url || img)
-            });
-            return;
-        }
-        if (sceneType === 'voiceover' && result.audio?.url) {
-            updateLoadingToResult(loadingElem, 'video', {
-                feedback: feedbackText,
-                videoUrl: result.audio.url
             });
             return;
         }
@@ -962,7 +1189,6 @@ function initAssetFilters() { /* 保持不变 */ }
 function initAssetDelete() { /* 保持不变 */ }
 function initAdminNav() { /* 保持不变 */ }
 function initCommunityInteraction() { /* 保持不变 */ }
-function initFileUpload() { /* 保持不变 */ }
 function initPagination() { /* 保持不变 */ }
 function initSearch() { /* 保持不变 */ }
 function initBatchActions() { /* 保持不变 */ }
@@ -1026,7 +1252,6 @@ function initDropdowns() {
 }
 
 function initRatioButtons() {
-    // 比例按钮（用于 agent 面板等）
     document.querySelectorAll('.ratio-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const container = btn.closest('.ratio-grid');
@@ -1087,61 +1312,32 @@ function initSceneSwitch() {
             const scene = item.getAttribute('data-scene');
             // 切换显示对应的面板
             document.querySelectorAll('.scene-controls').forEach(ctrl => ctrl.style.display = 'none');
-            document.querySelectorAll('.digital-human-inputs, .voiceover-inputs').forEach(extra => extra.style.display = 'none');
+            document.querySelectorAll('.digital-human-inputs').forEach(extra => extra.style.display = 'none');
             if (scene === 'video') {
                 document.querySelector('.video-scene').style.display = 'flex';
             } else if (scene === 'digital-human') {
                 document.querySelector('.digital-human-scene').style.display = 'flex';
                 document.querySelector('.digital-human-inputs').style.display = 'block';
-            } else if (scene === 'voiceover') {
-                document.querySelector('.voiceover-scene').style.display = 'flex';
-                document.querySelector('.voiceover-inputs').style.display = 'block';
-            } else if (scene === 'agent') {
-                document.querySelector('.agent-scene').style.display = 'flex';
             } else {
                 document.querySelector('.image-scene').style.display = 'flex';
             }
             // 更新所有场景中的 active 样式
             sceneItems.forEach(si => si.classList.remove('active'));
             document.querySelectorAll(`.dropdown-item[data-scene="${scene}"]`).forEach(si => si.classList.add('active'));
+            // 同步更新所有场景第一个按钮的显示文本
+            document.querySelectorAll('.scene-controls').forEach(ctrl => {
+                const firstDropdown = ctrl.querySelector('.control-dropdown');
+                if (firstDropdown) {
+                    const labelSpan = firstDropdown.querySelector('span:first-child');
+                    if (labelSpan && !labelSpan.querySelector('i')) {
+                        const activeItem = ctrl.querySelector(`.dropdown-item[data-scene="${scene}"]`);
+                        if (activeItem) {
+                            labelSpan.textContent = activeItem.textContent.trim();
+                        }
+                    }
+                }
+            });
             item.closest('.dropdown-menu').style.display = 'none';
-        });
-    });
-}
-
-// Agent 自定义面板相关
-function initAgentPanel() {
-    const customBtn = document.querySelector('.custom-btn');
-    const panel = document.querySelector('.agent-custom-panel');
-    if (customBtn && panel) {
-        customBtn.addEventListener('click', () => {
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        });
-    }
-    const autoToggle = document.getElementById('autoToggle');
-    if (autoToggle) {
-        autoToggle.addEventListener('change', function() {
-            const modelDropdowns = panel?.querySelectorAll('.model-dropdown') || [];
-            const sliderCircle = this.nextElementSibling?.querySelector('span');
-            if (this.checked) {
-                if (sliderCircle) sliderCircle.style.transform = 'translateX(20px)';
-                modelDropdowns.forEach(d => { d.style.opacity = '0.5'; d.style.pointerEvents = 'none'; });
-            } else {
-                if (sliderCircle) sliderCircle.style.transform = 'translateX(0)';
-                modelDropdowns.forEach(d => { d.style.opacity = '1'; d.style.pointerEvents = 'auto'; });
-            }
-        });
-    }
-    // 标签页切换
-    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const panel = this.closest('.agent-custom-panel');
-            if (!panel) return;
-            panel.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            panel.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
-            this.classList.add('active');
-            const tab = this.getAttribute('data-tab');
-            panel.querySelector(`.${tab}-tab`).style.display = 'block';
         });
     });
 }
@@ -1167,7 +1363,6 @@ function initAll() {
     initResolutionSelector();
     initQuantitySelector();
     initSceneSwitch();
-    initAgentPanel();
     initSendButton();      // 核心：绑定发送按钮
     initModels();          // 🆕 初始化模型列表（从API获取）
 }
