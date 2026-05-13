@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端连接测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .info {
+            color: #2196F3;
+        }
+        .warning {
+            color: #ff9800;
+        }
+        .config {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .config code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 前端连接测试工具</h1>
+        
+        <div class="config">
+            <strong>当前配置：</strong><br>
+            API 基础地址: <code id="apiBase">http://198.18.0.1:8003/api/v1</code>
+        </div>
+        
+        <div>
+            <button onclick="testAll()">🚀 运行所有测试</button>
+            <button onclick="testModels()">📋 测试获取模型列表</button>
+            <button onclick="testGenerate()">🎨 测试生成请求</button>
+            <button onclick="clearResult()">🗑️ 清空结果</button>
+        </div>
+        
+        <div id="result">点击按钮开始测试...</div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://198.18.0.1:8003/api/v1';
+        
+        function log(message, type = 'info') {
+            const result = document.getElementById('result');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            result.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            result.scrollTop = result.scrollHeight;
+        }
+        
+        function clearResult() {
+            document.getElementById('result').innerHTML = '';
+            log('结果已清空', 'info');
+        }
+        
+        async function testModels() {
+            log('========================================', 'info');
+            log('测试 1: 获取模型列表', 'info');
+            log('端点: GET /api/v1/models', 'info');
+            log('========================================', 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const duration = Date.now() - startTime;
+                
+                log(`响应状态: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                log(`响应时间: ${duration}ms`, 'info');
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    log(`错误详情: ${text}`, 'error');
+                    return false;
+                }
+                
+                const data = await response.json();
+                log(`响应代码: ${data.code}`, data.code === 200 ? 'success' : 'error');
+                log(`响应消息: ${data.message}`, 'info');
+                
+                if (data.data) {
+                    log(`图片模型数量: ${data.data.image_models?.length || 0}`, 'success');
+                    log(`视频模型数量: ${data.data.video_models?.length || 0}`, 'success');
+                    log(`音色数量: ${data.data.voices?.length || 0}`, 'success');
+                    
+                    if (data.data.image_models?.length > 0) {
+                        log(`示例图片模型: ${data.data.image_models[0].name}`, 'info');
+                    }
+                }
+                
+                log('✅ 模型列表获取成功！', 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ 请求失败: ${error.message}`, 'error');
+                log('', 'info');
+                log('可能的原因:', 'warning');
+                log('1. 后端服务未启动', 'warning');
+                log('2. IP 地址或端口配置错误', 'warning');
+                log('3. 防火墙阻止了连接', 'warning');
+                log('4. 网络连接问题', 'warning');
+                return false;
+            }
+        }
+        
+        async function testGenerate() {
+            log('========================================', 'info');
+            log('测试 2: 发送生成请求', 'info');
+            log('端点: POST /api/v1/generate', 'info');
+            log('========================================', 'info');
+            
+            const requestBody = {
+                output_type: 'image',
+                model: 'image_5.0_lite',
+                feature: 'text_to_image',
+                parameters: {
+                    resolution: '2K',
+                    ratio: '1:1',
+                    count: 1
+                },
+                prompt: '测试连接：一只可爱的小猫',
+                input_files: []
+            };
+            
+            log('请求体:', 'info');
+            log(JSON.stringify(requestBody, null, 2), 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                const duration = Date.now() - startTime;
+                
+                log(`响应状态: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                log(`响应时间: ${duration}ms`, 'info');
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    log(`错误详情: ${text}`, 'error');
+                    return false;
+                }
+                
+                const data = await response.json();
+                log(`响应代码: ${data.code}`, data.code === 200 ? 'success' : 'error');
+                log(`响应消息: ${data.message}`, 'info');
+                
+                if (data.data?.task_id) {
+                    log(`任务 ID: ${data.data.task_id}`, 'success');
+                    
+                    // 测试任务状态查询
+                    await testTaskStatus(data.data.task_id);
+                }
+                
+                log('✅ 生成请求发送成功！', 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ 请求失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testTaskStatus(taskId) {
+            log('========================================', 'info');
+            log('测试 3: 查询任务状态', 'info');
+            log(`端点: GET /api/v1/tasks/${taskId}/status`, 'info');
+            log('========================================', 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/tasks/${taskId}/status`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const duration = Date.now() - startTime;
+                
+                log(`响应状态: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                log(`响应时间: ${duration}ms`, 'info');
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    log(`错误详情: ${text}`, 'error');
+                    return false;
+                }
+                
+                const data = await response.json();
+                log(`响应代码: ${data.code}`, data.code === 200 ? 'success' : 'error');
+                
+                if (data.data) {
+                    log(`任务状态: ${data.data.status}`, 'info');
+                    log(`任务进度: ${data.data.progress}%`, 'info');
+                    log(`任务类型: ${data.data.type}`, 'info');
+                }
+                
+                log('✅ 任务状态查询成功！', 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ 请求失败: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAll() {
+            clearResult();
+            log('🚀 开始运行所有测试...', 'info');
+            log('', 'info');
+            
+            const test1 = await testModels();
+            log('', 'info');
+            
+            if (test1) {
+                const test2 = await testGenerate();
+                log('', 'info');
+                
+                if (test1 && test2) {
+                    log('========================================', 'success');
+                    log('🎉 所有测试通过！', 'success');
+                    log('前端可以正常连接后端。', 'success');
+                    log('========================================', 'success');
+                } else {
+                    log('========================================', 'error');
+                    log('❌ 部分测试失败', 'error');
+                    log('请检查后端服务和网络配置', 'error');
+                    log('========================================', 'error');
+                }
+            } else {
+                log('========================================', 'error');
+                log('❌ 基础连接测试失败', 'error');
+                log('', 'error');
+                log('请检查以下项目:', 'warning');
+                log('1. 后端服务是否正在运行？', 'warning');
+                log('   运行: start_server.bat', 'warning');
+                log('', 'warning');
+                log('2. IP 地址是否正确？', 'warning');
+                log('   当前配置: http://198.18.0.1:8003', 'warning');
+                log('   在后端设备运行 ipconfig 确认 IP', 'warning');
+                log('', 'warning');
+                log('3. 防火墙是否允许访问？', 'warning');
+                log('   运行: add_firewall_rule.bat', 'warning');
+                log('', 'warning');
+                log('4. 在后端设备测试网络访问:', 'warning');
+                log('   运行: python test_network_access.py', 'warning');
+                log('========================================', 'error');
+            }
+        }
+        
+        // 页面加载时显示配置信息
+        window.onload = function() {
+            log('前端连接测试工具已就绪', 'success');
+            log(`API 基础地址: ${API_BASE}`, 'info');
+            log('点击按钮开始测试...', 'info');
+        };
+    </script>
+</body>
+</html>
