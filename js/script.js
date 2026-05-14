@@ -809,26 +809,45 @@ function initSendButton() {
             });
             const response = await postJson(requestBody.endpoint, requestBody.body, currentAbortController.signal);
             console.log('📥 [同步模式] 接口响应:', response);
+            console.log('📥 [同步模式] 完整 data 结构:', JSON.stringify(response.data, null, 2));
             if (response.code !== 200) {
                 throw new Error(response.message || '生成接口返回异常');
             }
 
-            if (response.data?.result) {
-                console.log('✅ [同步模式] 后端直接返回结果');
+            const rawData = response.data || {};
+            
+            function extractResultFromData(d) {
+                if (d.result && typeof d.result === 'object' && Object.keys(d.result).length > 0) {
+                    return d.result;
+                }
+                const candidates = ['video_url', 'url', 'output_url', 'video', 'images'];
+                for (const key of candidates) {
+                    if (d[key] !== undefined && d[key] !== null && d[key] !== '') {
+                        if (key === 'video' && typeof d[key] === 'object') return { video: d[key] };
+                        if (key === 'images' && Array.isArray(d[key])) return { images: d[key] };
+                        if (key === 'video_url' || key === 'url' || key === 'output_url') return { video_url: d[key] };
+                    }
+                }
+                return null;
+            }
+
+            const extractedResult = extractResultFromData(rawData);
+            console.log('🔍 [同步模式] 提取结果:', extractedResult ? JSON.stringify(extractedResult, null, 2) : '未找到');
+
+            if (extractedResult) {
+                console.log('✅ [同步模式] 后端返回有效结果');
                 const taskResult = {
-                    task_id: response.data.task_id || 'sync_' + Date.now(),
-                    status: 'completed',
-                    result: response.data.result
+                    task_id: rawData.task_id || 'sync_' + Date.now(),
+                    status: rawData.status || 'completed',
+                    result: extractedResult
                 };
                 renderTaskResult(loadingMsg, taskResult, sceneType);
-            } else if (response.data?.task_id) {
-                console.log('⏳ [异步回退] 后端返回 task_id，使用模拟结果');
+            } else if (rawData.task_id) {
+                console.log('⚠️ [同步模式] result 为空，data keys:', Object.keys(rawData), '— 使用空结果渲染');
                 const taskResult = {
-                    task_id: response.data.task_id,
-                    status: 'completed',
-                    result: sceneType === 'video' || sceneType === 'digital-human'
-                        ? { video_url: '', video: null }
-                        : { images: [] }
+                    task_id: rawData.task_id,
+                    status: rawData.status || 'completed',
+                    result: {}
                 };
                 renderTaskResult(loadingMsg, taskResult, sceneType);
             } else {
@@ -1157,11 +1176,19 @@ function initSendButton() {
     //    - digital_human: { video_url, thumbnail_url }
     function renderTaskResult(loadingElem, taskResult, sceneType) {
         const result = taskResult.result || {};
+        console.log('🎬 [渲染] taskResult:', JSON.stringify(taskResult, null, 2));
+        console.log('🎬 [渲染] result 原始结构:', JSON.stringify(result, null, 2));
+        console.log('🎬 [渲染] sceneType:', sceneType);
         const modelName = getCurrentModelName();
         const feedbackText = `模型 ${modelName} 已生成完成，任务ID：${taskResult.task_id}`;
 
+        function extractVideoUrl(r) {
+            return r.video_url || (r.video && r.video.url) || r.url || r.output_url || r.file_url || null;
+        }
+
         if (sceneType === 'video' || sceneType === 'digital-human') {
-            const videoUrl = result.video_url || (result.video && result.video.url) || null;
+            const videoUrl = extractVideoUrl(result);
+            console.log('🎬 [渲染] 提取到的 videoUrl:', videoUrl);
             if (videoUrl) {
                 addToHistory({ type: 'video', url: videoUrl, name: taskResult.task_id });
                 updateLoadingToResult(loadingElem, 'video', {
@@ -1170,6 +1197,7 @@ function initSendButton() {
                 });
                 return;
             }
+            console.warn('⚠️ [渲染] video/digital-human 场景但未找到视频URL, result keys:', Object.keys(result));
         }
 
         if (sceneType === 'image' && Array.isArray(result.images)) {
@@ -1183,10 +1211,31 @@ function initSendButton() {
             return;
         }
 
-        if (taskResult.status === 'completed') {
-            updateLoadingToResult(loadingElem, 'text', {
-                feedback: feedbackText
+        if (Array.isArray(result.images)) {
+            result.images.forEach(img => {
+                addToHistory({ type: 'image', url: img.url || img, name: img.id || '' });
             });
+            updateLoadingToResult(loadingElem, 'image', {
+                feedback: feedbackText,
+                images: result.images.map(img => img.url || img)
+            });
+            return;
+        }
+
+        const fallbackVideoUrl = extractVideoUrl(result);
+        if (fallbackVideoUrl) {
+            console.log('🎬 [渲染] 回退：从 result 中提取到视频URL');
+            addToHistory({ type: 'video', url: fallbackVideoUrl, name: taskResult.task_id });
+            updateLoadingToResult(loadingElem, 'video', {
+                feedback: feedbackText,
+                videoUrl: fallbackVideoUrl
+            });
+            return;
+        }
+
+        if (taskResult.status === 'completed') {
+            console.warn('⚠️ [渲染] 任务完成但未找到可渲染的媒体内容，仅显示文字');
+            updateLoadingToResult(loadingElem, 'text', { feedback: feedbackText });
             return;
         }
         updateLoadingToResult(loadingElem, 'error', { message: '未能识别生成结果，请检查后端返回。' });
@@ -1220,7 +1269,12 @@ function initSendButton() {
     function updateLoadingToResult(loadingElem, type, data) {
         const feedbackText = data.feedback || '大模型已返回结果。';
         if (type === 'image') {
-            const imagesHtml = (data.images || []).map(url => `<div class="image-item"><img src="${url}" alt="生成的图片"></div>`).join('');
+            const imagesHtml = (data.images || []).map((url, i) => `
+                <div class="image-item" style="position:relative;display:inline-block;margin:4px;">
+                    <img src="${url}" alt="生成的图片${i+1}" style="max-width:280px;border-radius:8px;cursor:pointer;" onclick="window.open('${url}','_blank')">
+                    <a href="${url}" download target="_blank" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;text-decoration:none;"><i class="fas fa-download"></i> 下载</a>
+                </div>
+            `).join('');
             loadingElem.innerHTML = `
                 <div class="message-content">
                     <div class="message-text">${escapeHtml(feedbackText)}</div>
@@ -1231,8 +1285,9 @@ function initSendButton() {
             loadingElem.innerHTML = `
                 <div class="message-content">
                     <div class="message-text">${escapeHtml(feedbackText)}</div>
-                    <div class="message-video">
-                        <video controls src="${data.videoUrl}" style="max-width:100%; border-radius:8px;"></video>
+                    <div class="message-video" style="position:relative;">
+                        <video controls src="${data.videoUrl}" style="max-width:100%;border-radius:8px;"></video>
+                        <a href="${data.videoUrl}" download target="_blank" style="display:inline-block;margin-top:6px;background:#3182ce;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;text-decoration:none;"><i class="fas fa-download"></i> 下载视频</a>
                     </div>
                 </div>
             `;
