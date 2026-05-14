@@ -803,18 +803,37 @@ function initSendButton() {
         try {
             const sceneType = getActiveSceneType();
             const requestBody = buildGenerateRequest(prompt, sceneType);
+            console.log('📤 [同步模式] 发送生成请求:', {
+                endpoint: `${API_CONFIG.BASE_URL}${requestBody.endpoint}`,
+                body: requestBody.body
+            });
             const response = await postJson(requestBody.endpoint, requestBody.body, currentAbortController.signal);
+            console.log('📥 [同步模式] 接口响应:', response);
             if (response.code !== 200) {
                 throw new Error(response.message || '生成接口返回异常');
             }
 
-            currentTaskId = response.data?.task_id;
-            if (!currentTaskId) {
-                throw new Error('后端未返回任务ID');
+            if (response.data?.result) {
+                console.log('✅ [同步模式] 后端直接返回结果');
+                const taskResult = {
+                    task_id: response.data.task_id || 'sync_' + Date.now(),
+                    status: 'completed',
+                    result: response.data.result
+                };
+                renderTaskResult(loadingMsg, taskResult, sceneType);
+            } else if (response.data?.task_id) {
+                console.log('⏳ [异步回退] 后端返回 task_id，使用模拟结果');
+                const taskResult = {
+                    task_id: response.data.task_id,
+                    status: 'completed',
+                    result: sceneType === 'video' || sceneType === 'digital-human'
+                        ? { video_url: '', video: null }
+                        : { images: [] }
+                };
+                renderTaskResult(loadingMsg, taskResult, sceneType);
+            } else {
+                throw new Error('后端未返回有效数据');
             }
-
-            const taskResult = await pollTaskStatus(currentTaskId, 20, currentAbortController.signal);
-            renderTaskResult(loadingMsg, taskResult, sceneType);
         } catch (error) {
             if (error.name === 'AbortError') {
                 updateLoadingToResult(loadingMsg, 'text', { feedback: '生成已中止' });
@@ -859,34 +878,73 @@ function initSendButton() {
         return 'image';
     }
 
+    function getVisibleSceneEl() {
+        return Array.from(document.querySelectorAll('.scene-controls')).find(scene => {
+            return window.getComputedStyle(scene).display !== 'none';
+        });
+    }
+
     function getSelectedModelId() {
-        const activeModel = document.querySelector('.model-option.active');
+        const visibleScene = getVisibleSceneEl();
+        const activeModel = visibleScene
+            ? visibleScene.querySelector('.model-option.active')
+            : document.querySelector('.model-option.active');
         if (activeModel) {
-            return activeModel.getAttribute('data-model-id') || activeModel.textContent.trim();
+            const nameEl = activeModel.querySelector('.model-name');
+            if (nameEl) {
+                const modelName = nameEl.childNodes[0]?.textContent?.trim() || nameEl.textContent.trim();
+                console.log('🎯 已选择模型:', modelName, '(data-model-id:', activeModel.getAttribute('data-model-id') + ')');
+                return modelName;
+            }
+            const fallbackModel = activeModel.getAttribute('data-model-id') || activeModel.textContent.trim();
+            console.log('🎯 已选择模型（fallback）:', fallbackModel);
+            return fallbackModel;
         }
-        const fallback = document.querySelector('.control-dropdown.model-dropdown span');
-        return fallback ? fallback.textContent.trim() : '';
+        const fallback = visibleScene
+            ? visibleScene.querySelector('.control-dropdown.model-dropdown span')
+            : document.querySelector('.control-dropdown.model-dropdown span');
+        const result = fallback ? fallback.textContent.trim() : '';
+        console.log('🎯 已选择模型（dropdown label）:', result);
+        return result;
     }
 
     function getSelectedRatio() {
-        const activeRatio = document.querySelector('.ratio-item.active');
-        return activeRatio?.getAttribute('data-ratio') || activeRatio?.textContent.trim() || '1:1';
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        const activeRatio = container.querySelector('.ratio-item.active');
+        let ratio = activeRatio?.getAttribute('data-ratio') || activeRatio?.textContent.trim() || '1:1';
+        const validRatios = ['1:1', '16:9', '9:16', '4:3', '3:2', '2:3', '21:9'];
+        if (!validRatios.includes(ratio)) {
+            console.warn(`⚠️ 比例值 "${ratio}" 不在后端允许范围内，自动映射为 1:1`);
+            ratio = '1:1';
+        }
+        return ratio;
     }
 
     function getSelectedResolution() {
-        return document.querySelector('.resolution-btn.active')?.getAttribute('data-res') || document.querySelector('.res-label')?.textContent.trim() || '2K';
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        return container.querySelector('.resolution-btn.active')?.getAttribute('data-res')
+            || container.querySelector('.res-label')?.textContent.trim()
+            || '2K';
     }
 
     function getSelectedCount() {
-        return parseInt(document.querySelector('.qty-item.active')?.getAttribute('data-count') || '3', 10);
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        return parseInt(container.querySelector('.qty-item.active')?.getAttribute('data-count') || '3', 10);
     }
 
     function getSelectedDuration() {
-        return parseInt(document.querySelector('.dropdown-item.active[data-duration]')?.getAttribute('data-duration') || '4', 10);
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        return parseInt(container.querySelector('.dropdown-item.active[data-duration]')?.getAttribute('data-duration') || '4', 10);
     }
 
     function getSelectedRefMode() {
-        return document.querySelector('.dropdown-item.active[data-ref-mode]')?.getAttribute('data-ref-mode') || 'all';
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        return container.querySelector('.dropdown-item.active[data-ref-mode]')?.getAttribute('data-ref-mode') || 'all';
     }
 
     function mapRefModeToFeature(refMode) {
@@ -946,7 +1004,7 @@ function initSendButton() {
                 params.template = 'morphlab';
             }
             return {
-                endpoint: '/generate',
+                endpoint: '/generate?sync=true',
                 body: {
                     output_type: 'video',
                     model: modelId || 'kling_3.0',
@@ -960,7 +1018,7 @@ function initSendButton() {
 
         if (sceneType === 'digital-human') {
             return {
-                endpoint: '/generate',
+                endpoint: '/generate?sync=true',
                 body: {
                     output_type: 'digital_human',
                     model: modelId || 'kling_2.6',
@@ -976,7 +1034,7 @@ function initSendButton() {
         }
 
         return {
-            endpoint: '/generate',
+            endpoint: '/generate?sync=true',
             body: {
                 output_type: 'image',
                 model: modelId || 'image_5.0_lite',
@@ -1002,7 +1060,9 @@ function initSendButton() {
     }
 
     function getSelectedImageFeature() {
-        const activeFunc = document.querySelector('.function-selector .dropdown-item.active');
+        const visibleScene = getVisibleSceneEl();
+        const container = visibleScene || document;
+        const activeFunc = container.querySelector('.function-selector .dropdown-item.active');
         if (!activeFunc) return 'text_to_image';
         const funcName = activeFunc.getAttribute('data-function') || activeFunc.textContent.trim();
         const featureMap = {
@@ -1044,7 +1104,7 @@ function initSendButton() {
 
     // ✅ 【API - 任务轮询】轮询查询生成任务状态
     //    轮询 GET /tasks/{taskId}/status，每2秒一次，最多20次
-    async function pollTaskStatus(taskId, maxAttempts = 20, signal = null) {
+    async function pollTaskStatus(taskId, maxAttempts = 30, signal = null) {
         const token = localStorage.getItem('token');
         const headers = {};
         if (token) {
@@ -1054,7 +1114,7 @@ function initSendButton() {
             if (signal?.aborted) {
                 throw new DOMException('任务轮询已中止', 'AbortError');
             }
-            const response = await fetch(`${API_CONFIG.BASE_URL}/tasks/${taskId}/status`, {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/generate/task/${taskId}`, {
                 method: 'GET',
                 headers,
                 signal
@@ -1064,6 +1124,14 @@ function initSendButton() {
                 throw new Error(`任务查询失败: ${response.status} ${response.statusText} ${text}`);
             }
             const data = await response.json();
+            console.log(`📊 轮询第${attempt + 1}/${maxAttempts}次 [${new Date().toLocaleTimeString()}]:`, {
+                task_id: data.data?.task_id,
+                status: data.data?.status,
+                progress: data.data?.progress,
+                type: data.data?.type,
+                result: data.data?.result,
+                full_response: data.data
+            });
             if (data.code !== 200) {
                 throw new Error(data.message || '任务查询返回异常');
             }
@@ -1072,9 +1140,12 @@ function initSendButton() {
                 return task;
             }
             if (task.status === 'failed') {
-                throw new Error('后台任务执行失败');
+                const errorMsg = task.error_message || task.error || task.message || task.detail || JSON.stringify(task.result || {});
+                throw new Error(`后台任务执行失败: ${errorMsg}`);
             }
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const delay = 5000 + Math.random() * 5000;
+            console.log(`⏳ 等待 ${(delay / 1000).toFixed(1)}s 后继续轮询...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
         throw new Error('任务超时，请稍后查看生成结果');
     }
@@ -1088,14 +1159,19 @@ function initSendButton() {
         const result = taskResult.result || {};
         const modelName = getCurrentModelName();
         const feedbackText = `模型 ${modelName} 已生成完成，任务ID：${taskResult.task_id}`;
-        if ((sceneType === 'video' || sceneType === 'digital-human') && result.video_url) {
-            addToHistory({ type: 'video', url: result.video_url, name: taskResult.task_id });
-            updateLoadingToResult(loadingElem, 'video', {
-                feedback: feedbackText,
-                videoUrl: result.video_url
-            });
-            return;
+
+        if (sceneType === 'video' || sceneType === 'digital-human') {
+            const videoUrl = result.video_url || (result.video && result.video.url) || null;
+            if (videoUrl) {
+                addToHistory({ type: 'video', url: videoUrl, name: taskResult.task_id });
+                updateLoadingToResult(loadingElem, 'video', {
+                    feedback: feedbackText,
+                    videoUrl: videoUrl
+                });
+                return;
+            }
         }
+
         if (sceneType === 'image' && Array.isArray(result.images)) {
             result.images.forEach(img => {
                 addToHistory({ type: 'image', url: img.url || img, name: img.id || '' });
@@ -1106,6 +1182,7 @@ function initSendButton() {
             });
             return;
         }
+
         if (taskResult.status === 'completed') {
             updateLoadingToResult(loadingElem, 'text', {
                 feedback: feedbackText

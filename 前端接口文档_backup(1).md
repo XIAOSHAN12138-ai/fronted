@@ -13,7 +13,25 @@
 ### 接口地址
 ```
 POST /api/v1/generate
+POST /api/v1/generate?sync=true  (同步模式)
 ```
+
+### 🆕 同步模式 vs 异步模式
+
+| 特性 | 异步模式（默认） | 同步模式 |
+|------|-----------------|----------|
+| URL | `/api/v1/generate` | `/api/v1/generate?sync=true` |
+| 响应时间 | 立即返回（<1秒） | 等待完成（30秒-5分钟） |
+| 返回内容 | task_id | 最终结果 |
+| 需要轮询 | ✅ 是 | ❌ 否 |
+| 适用场景 | 生产环境 | 测试、简单应用 |
+| 控制台日志 | 后台输出 | 实时输出 |
+
+**推荐使用同步模式**：
+- ✅ 无需实现轮询逻辑
+- ✅ 代码更简单直接
+- ✅ 适合测试和开发
+- ✅ 后端控制台实时输出状态
 
 ### 请求格式
 
@@ -1269,3 +1287,397 @@ async function generateDigitalHuman() {
 **文档版本**: v2.0  
 **最后更新**: 2026-05-12  
 **接口格式**: 统一中文参数格式
+
+
+---
+
+## 🔄 同步模式详细说明
+
+### 什么是同步模式？
+
+同步模式是一种简化的调用方式，后端会等待任务完成后直接返回最终结果，无需前端轮询。
+
+### 如何使用同步模式？
+
+只需在 URL 后添加 `?sync=true` 参数：
+
+```javascript
+// 异步模式（默认）
+POST /api/v1/generate
+
+// 同步模式
+POST /api/v1/generate?sync=true
+```
+
+### 同步模式示例
+
+#### JavaScript/Fetch
+
+```javascript
+// 同步模式 - 一次请求，直接获得结果
+async function generateWithSync() {
+  const response = await fetch('http://localhost:8003/api/v1/generate?sync=true', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      output_type: 'image',
+      model: 'image_5.0_lite',
+      feature: 'text_to_image',
+      parameters: {
+        resolution: '2K',
+        ratio: '1:1',
+        count: 3
+      },
+      prompt: '一只可爱的小猫',
+      input_files: []
+    })
+  });
+  
+  const data = await response.json();
+  
+  if (data.data.status === 'completed') {
+    console.log('✅ 生成完成！');
+    console.log('结果:', data.data.result);
+    
+    // 直接使用结果
+    const images = data.data.result.images;
+    images.forEach(img => {
+      console.log('图片URL:', img.url);
+    });
+  } else {
+    console.error('❌ 生成失败');
+  }
+}
+```
+
+#### Python/Requests
+
+```python
+import requests
+
+response = requests.post(
+    'http://localhost:8003/api/v1/generate',
+    params={'sync': True},  # 启用同步模式
+    json={
+        'output_type': 'image',
+        'model': 'image_5.0_lite',
+        'feature': 'text_to_image',
+        'parameters': {
+            'resolution': '2K',
+            'ratio': '1:1',
+            'count': 3
+        },
+        'prompt': '一只可爱的小猫',
+        'input_files': []
+    }
+)
+
+data = response.json()
+
+if data['data']['status'] == 'completed':
+    print('✅ 生成成功！')
+    for img in data['data']['result']['images']:
+        print(f"图片URL: {img['url']}")
+```
+
+### 同步模式响应格式
+
+#### 成功响应
+
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": {
+    "task_id": "task_20240115120000_xxx",
+    "type": "image",
+    "status": "completed",
+    "progress": 100,
+    "result": {
+      "images": [
+        {
+          "id": "img_001",
+          "url": "https://xxx.com/image1.jpg",
+          "thumbnail": "https://xxx.com/thumb1.jpg"
+        },
+        {
+          "id": "img_002",
+          "url": "https://xxx.com/image2.jpg",
+          "thumbnail": "https://xxx.com/thumb2.jpg"
+        }
+      ]
+    },
+    "created_at": "2024-01-15T12:00:00Z",
+    "completed_at": "2024-01-15T12:00:45Z"
+  }
+}
+```
+
+#### 失败响应
+
+```json
+{
+  "code": 500,
+  "message": "生成失败: 具体错误信息",
+  "data": null
+}
+```
+
+#### 超时响应
+
+```json
+{
+  "code": 500,
+  "message": "任务超时（超过 300 秒）",
+  "data": null
+}
+```
+
+### 后端控制台日志
+
+使用同步模式时，后端控制台会实时输出处理状态：
+
+```
+============================================================
+[生成请求] 任务ID: task_20240115120000_12345
+[生成请求] 类型: image
+[生成请求] 模型: image_5.0_lite
+[生成请求] 功能: text_to_image
+[生成请求] 模式: 同步
+============================================================
+
+[同步模式] 开始处理任务...
+[INFO] 任务已创建: task_xxx, 开始轮询...
+[INFO] 轮询第 1 次, 状态: PROCESSING
+[INFO] 轮询第 2 次, 状态: PROCESSING
+[INFO] 轮询第 3 次, 状态: SUCCESS
+[同步模式] ✅ 任务完成
+```
+
+### 前端需要做的更改
+
+#### 1. 修改 API 调用 URL
+
+```javascript
+// 修改前（异步模式）
+const url = 'http://your-ip:8003/api/v1/generate';
+
+// 修改后（同步模式）
+const url = 'http://your-ip:8003/api/v1/generate?sync=true';
+```
+
+#### 2. 简化响应处理
+
+```javascript
+// 修改前（异步模式 - 需要轮询）
+const response = await fetch(url, { method: 'POST', ... });
+const data = await response.json();
+const taskId = data.data.task_id;
+
+// 轮询查询状态
+const pollStatus = async () => {
+  const statusRes = await fetch(`http://your-ip:8003/api/v1/tasks/${taskId}/status`);
+  const statusData = await statusRes.json();
+  
+  if (statusData.data.status === 'completed') {
+    // 使用结果
+    console.log(statusData.data.result);
+  } else {
+    setTimeout(pollStatus, 2000);
+  }
+};
+pollStatus();
+
+// 修改后（同步模式 - 直接获得结果）
+const response = await fetch(url, { method: 'POST', ... });
+const data = await response.json();
+
+if (data.data.status === 'completed') {
+  // 直接使用结果
+  console.log(data.data.result);
+}
+```
+
+#### 3. 添加加载提示
+
+由于同步模式需要等待，建议添加加载提示：
+
+```javascript
+// 显示加载提示
+showLoading('正在生成，请稍候...');
+
+try {
+  const response = await fetch(url + '?sync=true', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestData)
+  });
+  
+  const data = await response.json();
+  
+  if (data.data.status === 'completed') {
+    // 显示结果
+    showResult(data.data.result);
+  } else {
+    showError('生成失败');
+  }
+} catch (error) {
+  showError('请求失败: ' + error.message);
+} finally {
+  hideLoading();
+}
+```
+
+### 何时使用同步模式
+
+#### ✅ 推荐使用同步模式
+
+- 测试和开发阶段
+- 简单的单页应用
+- 命令行工具
+- 脚本自动化
+- 不想处理轮询逻辑
+- 需要查看后端实时日志
+
+#### ❌ 不推荐使用同步模式
+
+- 高并发生产环境
+- 需要处理大量请求
+- 移动应用（可能超时）
+- 需要显示实时进度条
+- 需要任务队列管理
+
+### 超时设置
+
+同步模式默认配置：
+- **最大等待时间**：300 秒（5 分钟）
+- **轮询间隔**：5 秒
+
+如果任务超过 5 分钟未完成，会返回超时错误。
+
+### 完整对比示例
+
+#### 异步模式（需要轮询）
+
+```javascript
+// 1. 创建任务
+const createResponse = await fetch('http://localhost:8003/api/v1/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(requestData)
+});
+const createData = await createResponse.json();
+const taskId = createData.data.task_id;
+
+// 2. 轮询查询状态
+const pollStatus = async () => {
+  const statusResponse = await fetch(
+    `http://localhost:8003/api/v1/tasks/${taskId}/status`
+  );
+  const statusData = await statusResponse.json();
+  
+  if (statusData.data.status === 'completed') {
+    console.log('完成！', statusData.data.result);
+  } else if (statusData.data.status === 'failed') {
+    console.error('失败！');
+  } else {
+    setTimeout(pollStatus, 2000); // 2秒后再查询
+  }
+};
+pollStatus();
+```
+
+#### 同步模式（一次请求）
+
+```javascript
+// 一次请求，直接获得结果
+const response = await fetch('http://localhost:8003/api/v1/generate?sync=true', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(requestData)
+});
+const data = await response.json();
+
+if (data.data.status === 'completed') {
+  console.log('完成！', data.data.result);
+} else {
+  console.error('失败！');
+}
+```
+
+### 注意事项
+
+1. **响应时间**：同步模式会等待任务完成，响应时间通常为 30秒 - 5分钟
+2. **超时处理**：如果超时，可以通过返回的 task_id 查询状态
+3. **并发限制**：同步模式会占用连接，不适合高并发场景
+4. **错误处理**：建议添加 try-catch 和超时处理
+
+### 最佳实践
+
+```javascript
+async function generateWithSyncMode(requestData) {
+  const url = 'http://localhost:8003/api/v1/generate?sync=true';
+  
+  try {
+    // 显示加载提示
+    console.log('🚀 开始生成...');
+    
+    // 发送请求（可能需要等待几分钟）
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // 检查响应
+    if (data.code !== 200) {
+      throw new Error(data.message || '请求失败');
+    }
+    
+    // 检查任务状态
+    if (data.data.status === 'completed') {
+      console.log('✅ 生成成功！');
+      return data.data.result;
+    } else if (data.data.status === 'failed') {
+      throw new Error('生成失败');
+    } else {
+      // 如果返回的不是完成状态，可以尝试轮询
+      console.log('⚠️ 任务未完成，task_id:', data.data.task_id);
+      return null;
+    }
+    
+  } catch (error) {
+    console.error('❌ 错误:', error.message);
+    throw error;
+  }
+}
+
+// 使用示例
+const result = await generateWithSyncMode({
+  output_type: 'image',
+  model: 'image_5.0_lite',
+  feature: 'text_to_image',
+  parameters: { resolution: '2K', ratio: '1:1', count: 3 },
+  prompt: '一只可爱的小猫',
+  input_files: []
+});
+
+if (result && result.images) {
+  result.images.forEach(img => {
+    console.log('图片URL:', img.url);
+  });
+}
+```
+
+---
+
+**同步模式更新时间**: 2024-01-15  
+**文档版本**: v2.1
