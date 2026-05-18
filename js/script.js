@@ -105,6 +105,11 @@ async function fetchModels() {
         globalModels = data.data || { image_models: [], video_models: [], voices: [] };
         console.log('✅ 模型列表获取成功:', globalModels);
         
+        if (data.data?.summary) {
+            const s = data.data.summary;
+            console.log('📊 模型统计:', `图片=${s.total_image_models}, 视频=${s.total_video_models}, 音色=${s.total_voices}`, '| 厂商:', s.vendors?.join(', '));
+        }
+        
         return globalModels;
     } catch (error) {
         console.error('❌ 获取模型列表失败:', error);
@@ -233,37 +238,52 @@ function renderImageModels(models) {
     if (!models || models.length === 0) {
         console.warn('没有获取到图片模型，使用默认硬编码');
         models = [
-            { id: 'image_5.0_lite', name: '图片5.0 Lite', description: '指令响应更精准，生成效果更智能', is_new: true },
-            { id: 'image_4.6', name: '图片4.6', description: '人像一致性保持更好，性价比更高', is_new: true },
-            { id: 'image_4.5', name: '图片4.5', description: '强化一致性、风格与图文响应', is_new: false },
-            { id: 'image_4.1', name: '图片4.1', description: '更专业的创意、美学和一致性保持', is_new: false },
-            { id: 'image_4.0', name: '图片4.0', description: '支持多参考图、系列组图生成', is_new: false }
+            { id: 'image_5.0_lite', name: '图片5.0 Lite', description: '指令响应更精准，生成效果更智能', is_new: true, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'image_4.6', name: '图片4.6', description: '人像一致性保持更好，性价比更高', is_new: true, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'image_4.5', name: '图片4.5', description: '强化一致性、风格与图文响应', is_new: false, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'image_4.1', name: '图片4.1', description: '更专业的创意、美学和一致性保持', is_new: false, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'image_4.0', name: '图片4.0', description: '支持多参考图、系列组图生成', is_new: false, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' }
         ];
     }
-    
-    // 渲染模型选项
-    models.forEach((model, index) => {
-        const modelOption = document.createElement('div');
-        modelOption.className = 'model-option';
-        modelOption.setAttribute('data-model-id', model.id);
-        
-        const badgeHtml = model.is_new ? '<span class="model-badge">New</span>' : '';
-        
-        modelOption.innerHTML = `
-            <div class="model-icon"><i class="fas fa-paper-plane"></i></div>
-            <div class="model-info">
-                <div class="model-name">${model.name}${badgeHtml}</div>
-                <div class="model-desc">${model.description || ''}</div>
-            </div>
-        `;
-        
-        imageModelDropdown.appendChild(modelOption);
+
+    const vendorGroups = {};
+    models.forEach(m => {
+        const v = m.vendor || 'unknown';
+        if (!vendorGroups[v]) vendorGroups[v] = [];
+        vendorGroups[v].push(m);
     });
-    
-    // 重新绑定点击事件
+
+    Object.entries(vendorGroups).forEach(([vendorId, groupModels]) => {
+        const groupName = groupModels[0]?.vendor_name || vendorId;
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'model-vendor-group';
+        groupHeader.innerHTML = `<span class="vendor-label">${groupName}</span>`;
+        imageModelDropdown.appendChild(groupHeader);
+
+        groupModels.forEach((model) => {
+            const modelOption = document.createElement('div');
+            modelOption.className = 'model-option';
+            modelOption.setAttribute('data-model-id', model.id);
+            modelOption.setAttribute('data-vendor', model.vendor || '');
+
+            const badgeHtml = model.is_new ? '<span class="model-badge">New</span>' : '';
+            const vipBadge = model.is_vip ? '<span class="model-badge-diamond">&#10022;</span>' : '';
+            const freeBadge = model.free_trial ? '<span class="model-badge-special">限免1次</span>' : '';
+
+            modelOption.innerHTML = `
+                <div class="model-icon"><i class="fas fa-paper-plane"></i></div>
+                <div class="model-info">
+                    <div class="model-name">${model.name}${badgeHtml}${vipBadge}${freeBadge}</div>
+                    <div class="model-desc">${model.description || ''}</div>
+                </div>
+            `;
+
+            imageModelDropdown.appendChild(modelOption);
+        });
+    });
+
+    console.log('✅ 图片模型列表渲染完成，共', models.length, '个模型，厂商分组:', Object.keys(vendorGroups));
     bindModelOptionEvents();
-    
-    console.log('✅ 图片模型列表渲染完成，共', models.length, '个模型');
 }
 
 /**
@@ -310,38 +330,51 @@ function renderVideoModels(models) {
     if (!models || models.length === 0) {
         console.warn('没有获取到视频模型，使用默认硬编码');
         models = [
-            { id: 'seedance_2.0_fast_vip', name: 'Seedance 2.0 Fast VIP', description: '极速推理，会员专属通道，音视文图均可参考', is_new: true, is_vip: true },
-            { id: 'seedance_2.0_vip', name: 'Seedance 2.0 VIP', description: '全模态能力，会员专属通道，音视文图均可参考', is_new: true, is_vip: true },
-            { id: 'seedance_2.0_fast', name: 'Seedance 2.0 Fast', description: '高性价比，音视文图均可参考', is_new: true, is_vip: false },
-            { id: 'seedance_2.0', name: 'Seedance 2.0', description: '全能王者，音视文图均可参考', is_new: true, is_vip: false, free_trial: true }
+            { id: 'seedance_2.0_fast_vip', name: 'Seedance 2.0 Fast VIP', description: '极速推理，会员专属通道，音视文图均可参考', is_new: true, is_vip: true, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'seedance_2.0_vip', name: 'Seedance 2.0 VIP', description: '全模态能力，会员专属通道，音视文图均可参考', is_new: true, is_vip: true, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'seedance_2.0_fast', name: 'Seedance 2.0 Fast', description: '高性价比，音视文图均可参考', is_new: true, is_vip: false, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+            { id: 'seedance_2.0', name: 'Seedance 2.0', description: '全能王者，音视文图均可参考', is_new: true, is_vip: false, free_trial: true, vendor: 'vendor_a', vendor_name: '腾讯云 VOD' }
         ];
     }
-    
-    // 渲染模型选项
-    models.forEach((model, index) => {
-        const modelOption = document.createElement('div');
-        modelOption.className = 'model-option';
-        modelOption.setAttribute('data-model-id', model.id);
-        
-        const vipBadge = model.is_vip ? '<span class="model-badge-diamond">&#10022;</span>' : '';
-        const newBadge = model.is_new ? '<span class="model-badge">New</span>' : '';
-        const freeBadge = model.free_trial ? '<span class="model-badge-special">限免1次</span>' : '';
-        
-        modelOption.innerHTML = `
-            <div class="model-icon"><i class="fas fa-cube"></i></div>
-            <div class="model-info">
-                <div class="model-name">${model.name}${vipBadge}${newBadge}${freeBadge}</div>
-                <div class="model-desc">${model.description || ''}</div>
-            </div>
-        `;
-        
-        videoModelDropdown.appendChild(modelOption);
+
+    const vendorGroups = {};
+    models.forEach(m => {
+        const v = m.vendor || 'unknown';
+        if (!vendorGroups[v]) vendorGroups[v] = [];
+        vendorGroups[v].push(m);
     });
-    
-    // 重新绑定点击事件
+
+    Object.entries(vendorGroups).forEach(([vendorId, groupModels]) => {
+        const groupName = groupModels[0]?.vendor_name || vendorId;
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'model-vendor-group';
+        groupHeader.innerHTML = `<span class="vendor-label">${groupName}</span>`;
+        videoModelDropdown.appendChild(groupHeader);
+
+        groupModels.forEach((model) => {
+            const modelOption = document.createElement('div');
+            modelOption.className = 'model-option';
+            modelOption.setAttribute('data-model-id', model.id);
+            modelOption.setAttribute('data-vendor', model.vendor || '');
+
+            const vipBadge = model.is_vip ? '<span class="model-badge-diamond">&#10022;</span>' : '';
+            const newBadge = model.is_new ? '<span class="model-badge">New</span>' : '';
+            const freeBadge = model.free_trial ? '<span class="model-badge-special">限免1次</span>' : '';
+
+            modelOption.innerHTML = `
+                <div class="model-icon"><i class="fas fa-cube"></i></div>
+                <div class="model-info">
+                    <div class="model-name">${model.name}${vipBadge}${newBadge}${freeBadge}</div>
+                    <div class="model-desc">${model.description || ''}</div>
+                </div>
+            `;
+
+            videoModelDropdown.appendChild(modelOption);
+        });
+    });
+
+    console.log('✅ 视频模型列表渲染完成，共', models.length, '个模型，厂商分组:', Object.keys(vendorGroups));
     bindModelOptionEvents();
-    
-    console.log('✅ 视频模型列表渲染完成，共', models.length, '个模型');
 }
 
 /**
@@ -778,35 +811,60 @@ function initSendButton() {
 
     async function handleSend() {
         const prompt = chatInput.value.trim();
-        if (!prompt) {
-            showToast('请输入描述内容', 'warning');
+        if (!prompt && uploadedFiles.length === 0) {
+            showToast('请输入描述内容或上传参考图', 'warning');
             return;
         }
 
         const modelName = getCurrentModelName();
+        const currentFiles = [...uploadedFiles];
 
-        // 1. 添加用户消息
-        addUserMessage(prompt);
-        // 清空输入框
+        addUserMessage(prompt, currentFiles);
         chatInput.value = '';
-        // 清空已上传文件
         uploadedFiles = [];
         renderFilePreviewsAfterSend();
 
-        // 2. 添加“生成中...”的 bot 消息
+        if (currentFiles.length > 0) {
+            const videoFiles = currentFiles.filter(f => f.type === 'video');
+            if (videoFiles.length > 0) {
+                const totalSizeMB = videoFiles.reduce((sum, f) => sum + (f.url?.length || 0) * 0.75 / 1024 / 1024, 0);
+                console.log(`🎬 [视频] 检测到 ${videoFiles.length} 个视频文件, 预估Base64大小: ${totalSizeMB.toFixed(1)}MB`);
+                if (totalSizeMB > 50) {
+                    showToast(`视频文件较大(${totalSizeMB.toFixed(0)}MB)，上传可能需要较长时间`, 'warning');
+                }
+            }
+            const imageFiles = currentFiles.filter(f => f.type === 'image');
+            if (imageFiles.length > 0) {
+                const totalSizeMB = imageFiles.reduce((sum, f) => sum + (f.url?.length || 0) * 0.75 / 1024 / 1024, 0);
+                console.log(`📷 [图片] 检测到 ${imageFiles.length} 个图片文件, 总大小: ${totalSizeMB.toFixed(1)}MB`);
+            }
+        }
+
         const loadingMsg = addLoadingMessage(modelName);
 
-        // 调用生成接口，端点由 buildGenerateRequest() 返回
         currentAbortController = new AbortController();
         setButtonState(true);
 
         try {
             const sceneType = getActiveSceneType();
-            const requestBody = buildGenerateRequest(prompt, sceneType);
+            const requestBody = buildGenerateRequest(prompt || '(无文字)', sceneType, currentFiles);
             console.log('📤 [同步模式] 发送生成请求:', {
                 endpoint: `${API_CONFIG.BASE_URL}${requestBody.endpoint}`,
-                body: requestBody.body
+                body: {
+                    ...requestBody.body,
+                    input_files: requestBody.body.input_files?.map(f => ({
+                        type: f.type,
+                        object_id: f.object_id,
+                        url_length: f.url?.length || 0,
+                        purpose: f.purpose,
+                        url_preview: f.url?.substring(0, 50) + '...'
+                    }))
+                }
             });
+            if (requestBody.body.input_files && requestBody.body.input_files.length > 0) {
+                const fileIds = requestBody.body.input_files.map(f => f.object_id).join(', ');
+                console.log(`📎 [同步模式] 已附加 ${requestBody.body.input_files.length} 个文件 [${fileIds}], feature: ${requestBody.body.feature}, prompt: ${requestBody.body.prompt}`);
+            }
             const response = await postJson(requestBody.endpoint, requestBody.body, currentAbortController.signal);
             console.log('📥 [同步模式] 接口响应:', response);
             console.log('📥 [同步模式] 完整 data 结构:', JSON.stringify(response.data, null, 2));
@@ -912,7 +970,9 @@ function initSendButton() {
             const nameEl = activeModel.querySelector('.model-name');
             if (nameEl) {
                 const modelName = nameEl.childNodes[0]?.textContent?.trim() || nameEl.textContent.trim();
-                console.log('🎯 已选择模型:', modelName, '(data-model-id:', activeModel.getAttribute('data-model-id') + ')');
+                const modelVendor = activeModel.getAttribute('data-vendor') || '';
+                console.log('🎯 已选择模型:', modelName, '| vendor:', modelVendor || '(无)', '(data-model-id:', activeModel.getAttribute('data-model-id') + ')');
+                window.__selectedModelVendor = modelVendor;
                 return modelName;
             }
             const fallbackModel = activeModel.getAttribute('data-model-id') || activeModel.textContent.trim();
@@ -996,15 +1056,39 @@ function initSendButton() {
     // ✅ 【API - 请求构建器】根据场景类型构建统一的生成请求
     //    统一端点: POST /api/v1/generate
     //    请求格式: { output_type, model, feature, parameters, prompt, input_files }
-    function buildGenerateRequest(prompt, sceneType) {
+    function buildGenerateRequest(prompt, sceneType, files) {
         const modelId = getSelectedModelId();
+        const vendor = window.__selectedModelVendor || '';
         const ratio = getSelectedRatio();
         const resolution = getSelectedResolution();
-        const inputFiles = buildInputFiles();
+        const inputFiles = (files && files.length > 0) ? files.map((file, index) => {
+            const prefix = file.type === 'image' ? 'image' : file.type === 'video' ? 'video' : file.type;
+            const objectId = file.object_id || `${prefix}_${index + 1}`;
+            return {
+                type: file.type,
+                url: file.url,
+                purpose: file.purpose || 'reference',
+                object_id: objectId
+            };
+        }) : buildInputFiles();
 
         if (sceneType === 'video') {
-            const refMode = getSelectedRefMode();
-            const feature = mapRefModeToFeature(refMode);
+            let feature;
+            let finalPrompt = prompt;
+            if (inputFiles && inputFiles.length > 0) {
+                if (inputFiles.length >= 2) {
+                    feature = 'multi_reference';
+                    const refs = inputFiles.map(f => `<<<${f.object_id}>>>`).join(' 和 ');
+                    finalPrompt = `${prompt} ${refs}`;
+                    console.log(`📎 [视频] 检测到 ${inputFiles.length} 个文件, 自动切换 feature 为 multi_reference, 追加引用: ${refs}`);
+                } else {
+                    feature = 'global_reference';
+                    console.log('📎 [视频] 检测到 1 个文件, 自动切换 feature 为 global_reference');
+                }
+            } else {
+                const refMode = getSelectedRefMode();
+                feature = mapRefModeToFeature(refMode);
+            }
             const params = {
                 resolution: resolution || '1080P',
                 duration: getSelectedDuration(),
@@ -1027,9 +1111,10 @@ function initSendButton() {
                 body: {
                     output_type: 'video',
                     model: modelId || 'kling_3.0',
+                    vendor: vendor || undefined,
                     feature: feature,
                     parameters: params,
-                    prompt: prompt,
+                    prompt: finalPrompt,
                     input_files: inputFiles
                 }
             };
@@ -1041,6 +1126,7 @@ function initSendButton() {
                 body: {
                     output_type: 'digital_human',
                     model: modelId || 'kling_2.6',
+                    vendor: vendor || undefined,
                     feature: 'digital_human',
                     parameters: {
                         voice_id: getSelectedVoiceId(),
@@ -1057,7 +1143,8 @@ function initSendButton() {
             body: {
                 output_type: 'image',
                 model: modelId || 'image_5.0_lite',
-                feature: getSelectedImageFeature(),
+                vendor: vendor || undefined,
+                feature: (inputFiles && inputFiles.length > 0) ? 'image_reference' : getSelectedImageFeature(),
                 parameters: {
                     resolution: resolution || '1080P',
                     ratio: ratio || '1:1',
@@ -1070,12 +1157,16 @@ function initSendButton() {
     }
 
     function buildInputFiles() {
-        return uploadedFiles.map(file => ({
-            type: file.type,
-            url: file.url,
-            purpose: file.purpose || 'reference',
-            object_id: file.object_id || undefined
-        }));
+        return uploadedFiles.map((file, index) => {
+            const prefix = file.type === 'image' ? 'image' : file.type === 'video' ? 'video' : file.type;
+            const objectId = file.object_id || `${prefix}_${index + 1}`;
+            return {
+                type: file.type,
+                url: file.url,
+                purpose: file.purpose || 'reference',
+                object_id: objectId
+            };
+        });
     }
 
     function getSelectedImageFeature() {
@@ -1108,14 +1199,48 @@ function initSendButton() {
             headers['Authorization'] = `Bearer ${token}`;
         }
         const url = path.startsWith('http') ? path : `${API_CONFIG.BASE_URL}${path}`;
-        const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-            signal
-        });
+        
+        const bodyStr = JSON.stringify(body);
+        const bodySizeKB = new Blob([bodyStr]).size / 1024;
+        console.log(`📡 [请求] ${path}, Body大小: ${bodySizeKB.toFixed(0)}KB (${(bodySizeKB / 1024).toFixed(1)}MB)`);
+        
+        if (bodySizeKB > 50 * 1024) {
+            console.warn(`⚠️ [请求] 请求体超过50MB (${(bodySizeKB / 1024).toFixed(1)}MB)，可能导致请求失败`);
+        }
+
+        const timeoutMs = bodySizeKB > 10 * 1024 ? 600000 : (bodySizeKB > 1024 ? 300000 : 120000);
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => {
+            timeoutController.abort();
+        }, timeoutMs);
+        
+        let finalSignal = signal;
+        if (signal) {
+            signal.addEventListener('abort', () => timeoutController.abort());
+        } else {
+            finalSignal = timeoutController.signal;
+        }
+
+        let response;
+        try {
+            response = await fetch(url, {
+                method: 'POST',
+                headers,
+                body: bodyStr,
+                signal: finalSignal
+            });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error(`请求超时 (${(timeoutMs / 1000).toFixed(0)}秒)，文件可能过大`);
+            }
+            throw err;
+        }
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
             const text = await response.text();
+            console.error(`❌ [请求] 失败 ${response.status}: ${text}`);
             throw new Error(`网络请求失败: ${response.status} ${response.statusText} ${text}`);
         }
         return response.json();
@@ -1242,10 +1367,22 @@ function initSendButton() {
     }
 
     // 辅助函数：添加用户消息
-    function addUserMessage(text) {
+    function addUserMessage(text, files) {
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message message-user';
-        msgDiv.innerHTML = `<div class="message-content"><div class="message-text">${escapeHtml(text)}</div></div>`;
+        let fileHtml = '';
+        if (files && files.length > 0) {
+            const previews = files.map(file => {
+                if (file.type === 'image') {
+                    return `<img src="${file.url}" alt="${escapeHtml(file.name || '')}" style="max-width:200px;max-height:200px;border-radius:8px;margin:4px;cursor:pointer;" onclick="window.open('${file.url}','_blank')">`;
+                } else if (file.type === 'video') {
+                    return `<video src="${file.url}" controls style="max-width:280px;max-height:200px;border-radius:8px;margin:4px;"></video>`;
+                }
+                return `<div style="padding:8px 12px;background:#f0f0f0;border-radius:6px;margin:4px;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-file"></i> ${escapeHtml(file.name || file.type)}</div>`;
+            }).join('');
+            fileHtml = `<div class="message-files" style="margin-top:6px;">${previews}</div>`;
+        }
+        msgDiv.innerHTML = `<div class="message-content">${text ? '<div class="message-text">' + escapeHtml(text) + '</div>' : ''}${fileHtml}</div>`;
         chatMessages.appendChild(msgDiv);
         scrollToBottom();
     }

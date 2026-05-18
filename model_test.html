@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模型功能测试 - 视频大模型整合平台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; padding: 20px; }
+h1 { text-align: center; margin-bottom: 8px; font-size: 22px; }
+.subtitle { text-align: center; color: #888; margin-bottom: 24px; font-size: 13px; }
+.controls { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all .2s; }
+.btn-primary { background: #3182ce; color: #fff; }
+.btn-primary:hover { background: #2c6cb8; }
+.btn-success { background: #38a169; color: #fff; }
+.btn-success:hover { background: #2f8557; }
+.btn-danger { background: #e53e3e; color: #fff; }
+.btn-danger:hover { background: #c53030; }
+.btn-warning { background: #dd6b20; color: #fff; }
+.btn-warning:hover { background: #c05621; }
+.btn-info { background: #3182ce; color: #fff; }
+.btn-info:hover { background: #2c6cb8; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+#statusBar { text-align: center; padding: 10px; margin-bottom: 16px; border-radius: 8px; font-size: 14px; background: #1a1d26; }
+#statusBar.running { background: #1a365d; color: #63b3ed; }
+#statusBar.done { background: #22543d; color: #68d391; }
+#statusBar.error { background: #742a2a; color: #feb2b2; }
+
+.grid { display: grid; gap: 12px; max-width: 1500px; margin: 0 auto; }
+.card { background: #1a1d26; border-radius: 10px; overflow: hidden; border: 1px solid #2d3342; }
+.card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #23272f; border-bottom: 1px solid #2d3342; font-weight: 700; font-size: 15px; }
+.card-header .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.badge-pending { background: #4a5568; color: #cbd5e0; }
+.badge-running { background: #2b6cb0; color: #bee3f8; }
+.badge-pass { background: #276749; color: #c6f6d5; }
+.badge-fail { background: #9b2c2c; color: #fed7d7; }
+.badge-skip { background: #744210; color: #fefcbf; }
+
+.test-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.test-table th { background: #23272f; padding: 8px 10px; text-align: left; font-weight: 600; color: #a0aec0; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; position: sticky; top: 0; }
+.test-table td { padding: 7px 10px; border-top: 1px solid #2d3342; vertical-align: top; }
+.test-table tr:hover td { background: #22262f; }
+.test-table .model-name { font-weight: 600; white-space: nowrap; }
+.test-table .feature-name { color: #90cdf4; }
+.test-table .result-detail { font-size: 11px; color: #a0aec0; word-break: break-all; line-height: 1.5; }
+
+.vendor-tag-a { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; background: #2c5282; color: #bee3f8; white-space: nowrap; }
+.vendor-tag-b { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; background: #744210; color: #fefcbf; white-space: nowrap; }
+.vendor-tag-unknown { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; background: #4a5568; color: #cbd5e0; white-space: nowrap; }
+
+.progress-bar { height: 4px; background: #2d3748; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: #3182ce; transition: width .3s; }
+.stats { display: flex; gap: 16px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+.stat-item { text-align: center; padding: 12px 20px; background: #1a1d26; border-radius: 8px; min-width: 90px; }
+.stat-num { font-size: 26px; font-weight: 800; }
+.stat-label { font-size: 12px; color: #888; margin-top: 2px; }
+.log-area { max-width: 1500px; margin: 20px auto; background: #0d1117; border-radius: 8px; border: 1px solid #2d3342; overflow: hidden; }
+.log-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #161b22; border-bottom: 1px solid #2d3342; font-size: 13px; font-weight: 600; }
+.log-body { padding: 12px 16px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; line-height: 1.7; max-height: 400px; overflow-y: auto; white-space: pre-wrap; color: #c9d1d9; }
+.log-info { color: #58a6ff; }
+.log-ok { color: #3fb950; }
+.log-warn { color: #d29922; }
+.log-err { color: #f85149; }
+
+.summary-panel { max-width: 1500px; margin: 0 auto 20px; background: #1a1d26; border-radius: 8px; border: 1px solid #2d3342; padding: 16px 20px; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.summary-item { background: #23272f; border-radius: 6px; padding: 12px 16px; }
+.summary-item-title { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.summary-item-value { font-size: 22px; font-weight: 800; }
+.summary-item-sub { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<h1>🧪 模型功能自动化测试</h1>
+<p class="subtitle">测试所有图片/视频模型的每个功能是否可用 · 同步模式 · <span id="apiUrl">http://192.168.31.243:8003/api/v1</span></p>
+
+<div class="summary-panel" id="summaryPanel" style="display:none;">
+    <div class="summary-grid" id="summaryGrid"></div>
+</div>
+
+<div class="stats" id="stats">
+    <div class="stat-item"><div class="stat-num" id="statTotal">0</div><div class="stat-label">总用例</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#3fb950;" id="statPass">0</div><div class="stat-label">通过 ✅</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#f85149;" id="statFail">0</div><div class="stat-label">失败 ❌</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#d29922;" id="statSkip">0</div><div class="stat-label">跳过 ⏭️</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#58a6ff;" id="statRunning">0</div><div class="stat-label">运行中 🔄</div></div>
+</div>
+
+<div class="controls">
+    <button class="btn btn-primary" onclick="runAllTests()" id="btnRunAll">▶ 运行全部测试</button>
+    <button class="btn btn-warning" onclick="runImageTests()" id="btnRunImg">📷 仅测图片组</button>
+    <button class="btn btn-warning" onclick="runVideoTests()" id="btnRunVid">🎬 仅测视频组</button>
+    <button class="btn btn-info btn-sm" onclick="loadModelsFromAPI()" id="btnLoadAPI">🔄 从后端加载模型</button>
+    <button class="btn btn-success" onclick="exportReport()" id="btnExport" disabled>📄 导出报告</button>
+    <button class="btn btn-danger" onclick="stopTests()" id="btnStop" disabled>⏹ 停止</button>
+</div>
+
+<div id="statusBar"></div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="grid" id="testGrid"></div>
+
+<div class="log-area">
+    <div class="log-header"><span>📋 实时日志</span><button class="btn btn-primary" style="padding:4px 12px;font-size:12px;" onclick="clearLog()">清空</button></div>
+    <div class="log-body" id="logBody"></div>
+</div>
+
+<script>
+const API_BASE = 'http://192.168.31.243:8003/api/v1';
+let isRunning = false;
+let shouldStop = false;
+let testResults = [];
+let abortController = null;
+let apiSummary = null;
+
+const IMAGE_MODELS = [
+    { id: 'image_5.0_lite', name: '图片5.0 Lite', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'image_4.6', name: '图片4.6', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'image_4.5', name: '图片4.5', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'image_4.1', name: '图片4.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'image_4.0', name: '图片4.0', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_3_0', name: 'Kling 3.0', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling3.0-omni_3_0_Omini', name: 'Kling3.0-Omni', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_01', name: 'Kling 0.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'vidu_q2', name: 'Vidu q2', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'gg_3_1', name: 'GG 3.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'sl_5_0_lite', name: 'SL 5.0 Lite', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'sl_4_5', name: 'SL 4.5', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'sl_4_0', name: 'SL 4.0', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'og_image2_medium', name: 'OG Image2 Medium', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'og_image2_low', name: 'OG Image2 Low', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'gpt-image-2', name: 'GPT Image 2', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-3.1-flash-image-preview', name: 'Gemini 3.1 Flash Image', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-3-pro-image-preview', name: 'Gemini 3 Pro Image', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-2.5-flash-image', name: 'Gemini 2.5 Flash Image', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-video-edit-1080p', name: 'HappyHorse Video Edit 1080P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-video-edit-720p', name: 'HappyHorse Video Edit 720P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-r2v-1080p', name: 'HappyHorse R2V 1080P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-r2v-720p', name: 'HappyHorse R2V 720P', vendor: 'vendor_b', vendor_name: 'Token Switch' }
+];
+
+const IMAGE_FEATURES = [
+    { id: 'text_to_image', name: '文生图', prompt: '一只可爱的橘猫坐在窗台上看夕阳' },
+    { id: 'image_reference', name: '参考图', prompt: '参考风格生成类似画面', needFile: true },
+    { id: 'style_transfer', name: '风格转换', prompt: '将照片转换为水彩画风格' },
+    { id: 'inpainting', name: '局部重绘', prompt: '将画面中的天空部分重绘为星空' },
+    { id: 'outpainting', name: '扩图', prompt: '向四周扩展画面内容' },
+    { id: 'object_removal', name: '消除笔', prompt: '移除画面中的杂物' },
+    { id: 'face_swap', name: 'AI换脸', prompt: '替换人脸' },
+    { id: 'outfit_change', name: 'AI换装', prompt: '更换服装为汉服' }
+];
+
+const VIDEO_MODELS = [
+    { id: 'seedance_2.0_fast_vip', name: 'Seedance 2.0 Fast VIP', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'seedance_2.0_vip', name: 'Seedance 2.0 VIP', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'seedance_2.0_fast', name: 'Seedance 2.0 Fast', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'seedance_2.0', name: 'Seedance 2.0', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_3_0', name: 'Kling 3.0', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling3.0-omni_3_0_Omini', name: 'Kling3.0-Omni', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_01', name: 'Kling 0.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'vidu_q2', name: 'Vidu q2', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'gg_3_1', name: 'GG 3.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'hailuo_02', name: 'Hailuo 02', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'gv_3_1', name: 'GV 3.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_2_1', name: 'Kling 2.1', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'kling_2_6', name: 'Kling 2.6', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'vidu_q3', name: 'Vidu Q3', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'vidu_q2_turbo', name: 'Vidu Q2 Turbo', vendor: 'vendor_a', vendor_name: '腾讯云 VOD' },
+    { id: 'happyhorse-1.0-video-gen-1080p', name: 'HappyHorse Video Gen 1080P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-video-gen-720p', name: 'HappyHorse Video Gen 720P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-video-edit-1080p', name: 'HappyHorse Video Edit 1080P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-video-edit-720p', name: 'HappyHorse Video Edit 720P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-r2v-1080p', name: 'HappyHorse R2V 1080P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'happyhorse-1.0-r2v-720p', name: 'HappyHorse R2V 720P', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-3.1-flash-video', name: 'Gemini 3.1 Flash Video', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-3-pro-video', name: 'Gemini 3 Pro Video', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'gemini-2.5-flash-video', name: 'Gemini 2.5 Flash Video', vendor: 'vendor_b', vendor_name: 'Token Switch' },
+    { id: 'suno-video', name: 'Suno Video', vendor: 'vendor_b', vendor_name: 'Token Switch' }
+];
+
+const VIDEO_FEATURES = [
+    { id: 'text_to_video', name: '视频扩写(文生视频)', prompt: '一只蝴蝶在花丛中飞舞，花瓣飘落' },
+    { id: 'global_reference', name: '全能参考(图生视频)', prompt: '让画面中的元素动起来', needFile: true },
+    { id: 'first_last_frame', name: '首尾帧生成', prompt: '平滑过渡动画效果' },
+    { id: 'multi_reference', name: '多帧参考', prompt: '让两个角色互动跳舞', needFileMulti: true },
+    { id: 'template_effect', name: '特效复刻', prompt: '应用电影级特效模板' },
+    { id: 'motion_control', name: '动作模仿', prompt: '模仿指定动作轨迹' },
+    { id: 'lip_sync', name: '对口型', prompt: '让角色口型与音频同步' }
+];
+
+const TEST_PROMPTS = {
+    image: '一只可爱的橘猫坐在窗台上看夕阳，温暖的午后光线',
+    video: '一只蝴蝶在花丛中飞舞，花瓣随风缓缓飘落'
+};
+
+function log(msg, type = 'info') {
+    const el = document.getElementById('logBody');
+    const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    const cls = type === 'ok' ? 'log-ok' : type === 'warn' ? 'log-warn' : type === 'err' ? 'log-err' : 'log-info';
+    el.innerHTML += `<span class="${cls}">[${time}] ${msg}</span>\n`;
+    el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() { document.getElementById('logBody').innerHTML = ''; }
+
+function getVendorTag(vendor) {
+    if (vendor === 'vendor_a') return '<span class="vendor-tag-a">腾讯云</span>';
+    if (vendor === 'vendor_b') return '<span class="vendor-tag-b">TS</span>';
+    return '<span class="vendor-tag-unknown">' + (vendor || '?') + '</span>';
+}
+
+function updateStats() {
+    const total = testResults.length;
+    const pass = testResults.filter(r => r.status === 'pass').length;
+    const fail = testResults.filter(r => r.status === 'fail').length;
+    const skip = testResults.filter(r => r.status === 'skip').length;
+    const running = testResults.filter(r => r.status === 'running').length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statPass').textContent = pass;
+    document.getElementById('statFail').textContent = fail;
+    document.getElementById('statSkip').textContent = skip;
+    document.getElementById('statRunning').textContent = running;
+
+    const done = pass + fail + skip;
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function setStatus(msg, cls) {
+    const el = document.getElementById('statusBar');
+    el.textContent = msg;
+    el.className = cls;
+}
+
+function setButtons(running) {
+    isRunning = running;
+    document.getElementById('btnRunAll').disabled = running;
+    document.getElementById('btnRunImg').disabled = running;
+    document.getElementById('btnRunVid').disabled = running;
+    document.getElementById('btnLoadAPI').disabled = running;
+    document.getElementById('btnStop').disabled = !running;
+}
+
+function renderSummaryPanel() {
+    const panel = document.getElementById('summaryPanel');
+    const grid = document.getElementById('summaryGrid');
+
+    if (!apiSummary) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    panel.style.display = 'block';
+    const s = apiSummary;
+
+    let html = '';
+    html += `<div class="summary-item"><div class="summary-item-title">📷 图片模型</div><div class="summary-item-value">${s.total_image_models}</div><div class="summary-item-sub">厂商: ${s.vendors?.join(', ') || '-'}</div></div>`;
+    html += `<div class="summary-item"><div class="summary-item-title">🎬 视频模型</div><div class="summary-item-value">${s.total_video_models}</div><div class="summary-item-sub">含 Token Switch 模型</div></div>`;
+    html += `<div class="summary-item"><div class="summary-item-title">🔊 音色</div><div class="summary-item-value">${s.total_voices}</div><div class="summary-item-sub">TTS 音色列表</div></div>`;
+    grid.innerHTML = html;
+}
+
+function renderGrid() {
+    const grid = document.getElementById('testGrid');
+    let html = '';
+
+    html += '<div class="card">';
+    html += '<div class="card-header"><span>📷 图片生成组</span><span class="badge badge-pending" id="imgBadge">待测试</span></div>';
+    html += '<table class="test-table"><thead><tr><th>#</th><th>厂商</th><th>模型</th><th>功能</th><th>状态</th><th>耗时</th><th>详情</th></tr></thead><tbody id="imgBody"></tbody></table>';
+    html += '</div>';
+
+    html += '<div class="card">';
+    html += '<div class="card-header"><span>🎬 视频生成组</span><span class="badge badge-pending" id="vidBadge">待测试</span></div>';
+    html += '<table class="test-table"><thead><tr><th>#</th><th>厂商</th><th>模型</th><th>功能</th><th>状态</th><th>耗时</th><th>详情</th></tr></thead><tbody id="vidBody"></tbody></table>';
+    html += '</div>';
+
+    grid.innerHTML = html;
+}
+
+function renderRow(idx, model, feature, result) {
+    let badgeCls = 'badge-pending', badgeText = '⏳ 待测';
+    if (result) {
+        if (result.status === 'running') { badgeCls = 'badge-running'; badgeText = '🔄 测试中'; }
+        else if (result.status === 'pass') { badgeCls = 'badge-pass'; badgeText = '✅ 通过'; }
+        else if (result.status === 'fail') { badgeCls = 'badge-fail'; badgeText = '❌ 失败'; }
+        else if (result.status === 'skip') { badgeCls = 'badge-skip'; badgeText = '⏭️ 跳过'; }
+    }
+    return `<tr id="row-${idx}">
+        <td>${idx + 1}</td>
+        <td>${getVendorTag(model.vendor)}</td>
+        <td class="model-name">${model.name}</td>
+        <td class="feature-name">${feature.name}</td>
+        <td><span class="badge ${badgeCls}">${badgeText}</span></td>
+        <td>${result?.duration ? result.duration + 'ms' : '-'}</td>
+        <td class="result-detail">${result?.detail || ''}</td>
+    </tr>`;
+}
+
+async function loadModelsFromAPI() {
+    const btn = document.getElementById('btnLoadAPI');
+    btn.disabled = true;
+    btn.textContent = '⏳ 加载中...';
+    log('🔄 正在从后端加载模型列表...', 'info');
+
+    try {
+        const resp = await fetch(`${API_BASE}/models`);
+        const data = await resp.json();
+
+        if (data.code !== 200 || !data.data) {
+            throw new Error(data.message || '返回数据异常');
+        }
+
+        apiSummary = data.data.summary || null;
+
+        const apiImgModels = (data.data.image_models || []).map(m => ({
+            id: m.id,
+            name: m.name,
+            vendor: m.vendor || '',
+            vendor_name: m.vendor_name || ''
+        }));
+
+        const apiVidModels = (data.data.video_models || []).map(m => ({
+            id: m.id,
+            name: m.name,
+            vendor: m.vendor || '',
+            vendor_name: m.vendor_name || ''
+        }));
+
+        log(`✅ 从后端加载成功: 图片=${apiImgModels.length}, 视频=${apiVidModels.length}`, 'ok');
+
+        if (apiSummary) {
+            log(`📊 统计: 图片=${apiSummary.total_image_models}, 视频=${apiSummary.total_video_models}, 音色=${apiSummary.total_voices}`, 'info');
+        }
+
+        if (apiImgModels.length > 0) {
+            IMAGE_MODELS.length = 0;
+            IMAGE_MODELS.push(...apiImgModels);
+        }
+        if (apiVidModels.length > 0) {
+            VIDEO_MODELS.length = 0;
+            VIDEO_MODELS.push(...apiVidModels);
+        }
+
+        renderSummaryPanel();
+        renderGrid();
+        updateStats();
+
+        log(`📋 当前用例数: 图片 ${IMAGE_MODELS.length}×${IMAGE_FEATURES.length}=${IMAGE_MODELS.length*IMAGE_FEATURES.length}, 视频 ${VIDEO_MODELS.length}×${VIDEO_FEATURES.length}=${VIDEO_MODELS.length*VIDEO_FEATURES.length}`, 'info');
+        btn.textContent = '✅ 已从后端加载';
+
+    } catch (err) {
+        log(`❌ 加载失败: ${err.message}`, 'err');
+        btn.textContent = '🔄 从后端加载模型（失败）';
+    }
+    btn.disabled = false;
+}
+
+async function runSingleTest(idx, sceneType, model, feature) {
+    const rowId = `row-${idx}`;
+    const rowEl = document.getElementById(rowId);
+    if (!rowEl) return null;
+
+    const result = {
+        idx,
+        sceneType,
+        model: model.name,
+        vendor: model.vendor || '',
+        vendor_name: model.vendor_name || '',
+        feature: feature.name,
+        status: 'running',
+        startTime: Date.now()
+    };
+    testResults[idx] = result;
+    updateStats();
+
+    rowEl.innerHTML = renderRow(idx, model, feature, result);
+    log(`[测试 ${idx + 1}] ${sceneType === 'image' ? '📷' : '🎬'} [${model.vendor_name || model.vendor || '?'}] ${model.name} × ${feature.name} ...`, 'info');
+
+    try {
+        const body = buildRequestBody(sceneType, model.id, feature, model.vendor);
+        const startTs = Date.now();
+        const resp = await fetch(`${API_BASE}/generate?sync=true`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: abortController.signal,
+        });
+        const elapsed = Date.now() - startTs;
+        const data = await resp.json();
+
+        if (data.code === 200 && data.data) {
+            const hasResult = data.data.result &&
+                (Array.isArray(data.data.result.images) && data.data.result.images.length > 0 ||
+                 data.data.result.video_url ||
+                 (data.data.result.video && data.data.result.video.url));
+
+            if (hasResult) {
+                result.status = 'pass';
+                result.detail = `code=200, 耗时=${elapsed}ms, task_id=${data.data.task_id}`;
+                log(`[测试 ${idx + 1}] ✅ 通过 (${elapsed}ms) task_id=${data.data.task_id}`, 'ok');
+            } else {
+                result.status = 'fail';
+                result.detail = `code=200 但 result 为空或无有效数据。data: ${JSON.stringify(data.data).substring(0, 300)}`;
+                log(`[测试 ${idx + 1}] ❌ 失败: 返回成功但无结果数据`, 'err');
+            }
+        } else {
+            result.status = 'fail';
+            result.detail = `code=${data.code}, msg=${data.message}`;
+            log(`[测试 ${idx + 1}] ❌ 失败: code=${data.code} msg=${data.message}`, 'err');
+        }
+        result.duration = elapsed;
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            result.status = 'skip';
+            result.detail = '用户停止';
+            log(`[测试 ${idx + 1}] ⏭️ 已跳过（停止）`, 'warn');
+        } else {
+            result.status = 'fail';
+            result.detail = err.message.substring(0, 300);
+            log(`[测试 ${idx + 1}] ❌ 异常: ${err.message}`, 'err');
+        }
+        result.duration = Date.now() - result.startTime;
+    }
+
+    testResults[idx] = result;
+    updateStats();
+    rowEl.innerHTML = renderRow(idx, model, feature, result);
+
+    await sleep(300);
+    return result;
+}
+
+function buildRequestBody(sceneType, modelId, feature, vendor) {
+    if (sceneType === 'image') {
+        return {
+            output_type: 'image',
+            model: modelId,
+            vendor: vendor || undefined,
+            feature: feature.id,
+            parameters: { resolution: '1080P', ratio: '1:1', count: 1 },
+            prompt: feature.prompt || TEST_PROMPTS.image,
+            input_files: []
+        };
+    } else {
+        const params = { resolution: '1080P', duration: 4, ratio: '16:9' };
+        if (feature.id === 'lip_sync') {
+            params.face_id = 0;
+            params.audio_start_time = 0;
+            params.audio_volume = 1.0;
+            params.original_audio_volume = 0.0;
+        }
+        return {
+            output_type: 'video',
+            model: modelId,
+            vendor: vendor || undefined,
+            feature: feature.id,
+            parameters: params,
+            prompt: feature.prompt || TEST_PROMPTS.video,
+            input_files: []
+        };
+    }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runTestSuite(suiteName, models, features, sceneType, bodyId, badgeId) {
+    const totalCases = models.length * features.length;
+    log(`\n${'='.repeat(60)}`);
+    log(`🚀 开始测试 [${suiteName}] — ${models.length} 个模型 × ${features.length} 个功能 = ${totalCases} 个用例`);
+
+    const vendors = [...new Set(models.map(m => m.vendor).filter(Boolean))];
+    if (vendors.length > 0) {
+        log(`   厂商分布: ${vendors.map(v => {
+            const count = models.filter(m => m.vendor === v).length;
+            const name = models.find(m => m.vendor === v)?.vendor_name || v;
+            return `${name}(${count})`;
+        }).join(', ')}`);
+    }
+    log(`${'='.repeat(60)}\n`);
+
+    const body = document.getElementById(bodyId);
+    body.innerHTML = '';
+    let idxOffset = testResults.length;
+
+    for (let mi = 0; mi < models.length; mi++) {
+        for (let fi = 0; fi < features.length; fi++) {
+            if (shouldStop) break;
+            const idx = idxOffset + mi * features.length + fi;
+            body.innerHTML += renderRow(idx, models[mi], features[fi], null);
+        }
+    }
+
+    let passCount = 0, failCount = 0, skipCount = 0;
+    const badge = document.getElementById(badgeId);
+
+    for (let mi = 0; mi < models.length; mi++) {
+        for (let fi = 0; fi < features.length; fi++) {
+            if (shouldStop) break;
+            const idx = idxOffset + mi * features.length + fi;
+            const result = await runSingleTest(idx, sceneType, models[mi], features[fi]);
+            if (result) {
+                if (result.status === 'pass') passCount++;
+                else if (result.status === 'fail') failCount++;
+                else skipCount++;
+            }
+        }
+    }
+
+    badge.className = failCount > 0 ? 'badge-fail' : passCount > 0 ? 'badge-pass' : 'badge-skip';
+    badge.textContent = `通过${passCount}/失败${failCount}/跳过${skipCount}`;
+
+    log(`\n${'─'.repeat(40)}`);
+    log(`📊 [${suiteName}] 完成: ✅${passCount} ❌${failCount} ⏭️${skipCount}\n`);
+    return { pass: passCount, fail: failCount, skip: skipCount };
+}
+
+async function runAllTests() {
+    shouldStop = false;
+    abortController = new AbortController();
+    setButtons(true);
+    testResults = [];
+    renderGrid();
+    updateStats();
+    setStatus('正在运行全部测试...', 'running');
+
+    await runTestSuite('图片生成组', IMAGE_MODELS, IMAGE_FEATURES, 'image', 'imgBody', 'imgBadge');
+    if (!shouldStop) {
+        await runTestSuite('视频生成组', VIDEO_MODELS, VIDEO_FEATURES, 'video', 'vidBody', 'vidBadge');
+    }
+
+    setButtons(false);
+    const totalFail = testResults.filter(r => r.status === 'fail').length;
+    setStatus(totalFail > 0 ? `测试完成，${totalFail} 个失败` : `全部完成！`, totalFail > 0 ? 'error' : 'done');
+    document.getElementById('btnExport').disabled = false;
+}
+
+async function runImageTests() {
+    shouldStop = false;
+    abortController = new AbortController();
+    setButtons(true);
+    testResults = [];
+    renderGrid();
+    updateStats();
+    setStatus('正在测试图片生成组...', 'running');
+    await runTestSuite('图片生成组', IMAGE_MODELS, IMAGE_FEATURES, 'image', 'imgBody', 'imgBadge');
+    setButtons(false);
+    const totalFail = testResults.filter(r => r.status === 'fail').length;
+    setStatus(totalFail > 0 ? `测试完成，${totalFail} 个失败` : `图片组测试完成！`, totalFail > 0 ? 'error' : 'done');
+    document.getElementById('btnExport').disabled = false;
+}
+
+async function runVideoTests() {
+    shouldStop = false;
+    abortController = new AbortController();
+    setButtons(true);
+    testResults = [];
+    renderGrid();
+    updateStats();
+    setStatus('正在测试视频生成组...', 'running');
+    await runTestSuite('视频生成组', VIDEO_MODELS, VIDEO_FEATURES, 'video', 'vidBody', 'vidBadge');
+    setButtons(false);
+    const totalFail = testResults.filter(r => r.status === 'fail').length;
+    setStatus(totalFail > 0 ? `测试完成，${totalFail} 个失败` : `视频组测试完成！`, totalFail > 0 ? 'error' : 'done');
+    document.getElementById('btnExport').disabled = false;
+}
+
+function stopTests() {
+    shouldStop = true;
+    if (abortController) abortController.abort();
+    log('\n⏹ 用户请求停止测试\n', 'warn');
+}
+
+function exportReport() {
+    const now = new Date().toLocaleString('zh-CN');
+    const total = testResults.length;
+    const pass = testResults.filter(r => r.status === 'pass').length;
+    const fail = testResults.filter(r => r.status === 'fail').length;
+    const skip = testResults.filter(r => r.status === 'skip').length;
+    const rate = total > 0 ? ((pass / total) * 100).toFixed(1) : 0;
+
+    let md = `# 模型功能测试报告\n\n`;
+    md += `- **测试时间**: ${now}\n`;
+    md += `- **API 地址**: ${API_BASE}\n`;
+    md += `- **测试模式**: 同步模式 (\`?sync=true\`)\n`;
+
+    if (apiSummary) {
+        md += `\n## 🔗 后端统计信息\n\n`;
+        md += `| 指标 | 数量 |\n|------|------|\n| 图片模型 | ${apiSummary.total_image_models} |\n| 视频模型 | ${apiSummary.total_video_models} |\n| 音色 | ${apiSummary.total_voices} |\n| 厂商 | ${(apiSummary.vendors || []).join(', ')} |\n\n`;
+    }
+
+    md += `## 📊 总体统计\n\n`;
+    md += `| 指标 | 数量 |\n|------|------|\n| 总用例 | ${total} |\n| 通过 ✅ | ${pass} |\n| 失败 ❌ | ${fail} |\n| 跳过 ⏭️ | ${skip} |\n| 通过率 | ${rate}% |\n\n`;
+
+    const imgResults = testResults.filter(r => r.sceneType === 'image');
+    const vidResults = testResults.filter(r => r.sceneType === 'video');
+
+    function renderSection(title, results) {
+        md += `## ${title}\n\n`;
+        md += `| # | 厂商 | 模型 | 功能 | 状态 | 耗时 | 详情 |\n|---|------|------|------|------|------|------|\n`;
+        results.forEach((r, i) => {
+            const icon = r.status === 'pass' ? '✅' : r.status === 'fail' ? '❌' : r.status === 'skip' ? '⏭️' : '⏳';
+            const vName = r.vendor_name || r.vendor || '-';
+            md += `| ${i + 1} | ${vName} | ${r.model} | ${r.feature} | ${icon} ${r.status} | ${r.duration || '-'}ms | ${(r.detail || '').replace(/\|/g, '\\|')} |\n`;
+        });
+        const p = results.filter(x => x.status === 'pass').length;
+        const f = results.filter(x => x.status === 'fail').length;
+        const byVendor = {};
+        results.forEach(r => { const v = r.vendor || 'unknown'; byVendor[v] = (byVendor[v] || 0) + 1; });
+        md += `\n> 小计: 通过 **${p}**, 失败 **${f}**, 共 **${results.length}**\n`;
+        md += `> 厂商分布: ${Object.entries(byVendor).map(([v,c])=>`${v}: ${c}`).join(' | ')}\n\n`;
+    }
+
+    renderSection('📷 图片生成组测试详情', imgResults);
+    renderSection('🎬 视频生成组测试详情', vidResults);
+
+    const fails = testResults.filter(r => r.status === 'fail');
+    if (fails.length > 0) {
+        md += `## ❌ 失败用例汇总\n\n`;
+        fails.forEach((r, i) => {
+            md += `### ${i + 1}. [${r.vendor_name || r.vendor || '?'}] ${r.model} × ${r.feature}\n\n`;
+            md += `- **场景**: ${r.sceneType === 'image' ? '图片' : '视频'}\n`;
+            md += `- **错误**: \`${r.detail}\`\n\n`;
+        });
+    }
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `模型测试报告_${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    log('📄 报告已导出', 'ok');
+}
+
+renderGrid();
+updateStats();
+
+log('就绪。点击按钮开始测试。', 'info');
+log(`API: ${API_BASE}`, 'info');
+log(`图片模型: ${IMAGE_MODELS.length} 个 × 功能: ${IMAGE_FEATURES.length} 个 = ${IMAGE_MODELS.length * IMAGE_FEATURES.length} 用例`, 'info');
+log(`视频模型: ${VIDEO_MODELS.length} 个 × 功能: ${VIDEO_FEATURES.length} 个 = ${VIDEO_MODELS.length * VIDEO_FEATURES.length} 用例`, 'info');
+
+const imgVendors = [...new Set(IMAGE_MODELS.map(m => m.vendor).filter(Boolean))];
+const vidVendors = [...new Set(VIDEO_MODELS.map(m => m.vendor).filter(Boolean))];
+if (imgVendors.length) log(`图片模型厂商: ${imgVendors.map(v => IMAGE_MODELS.find(m=>m.vendor===v)?.vendor_name||v).join(', ')}`, 'info');
+if (vidVendors.length) log(`视频模型厂商: ${vidVendors.map(v => VIDEO_MODELS.find(m=>m.vendor===v)?.vendor_name||v).join(', ')}`, 'info');
+log('\n💡 提示: 可点击「🔄 从后端加载模型」按钮获取最新模型列表和统计信息', 'info');
+</script>
+</body>
+</html>

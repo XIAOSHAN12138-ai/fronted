@@ -734,6 +734,29 @@ body {
     border-bottom: 1px solid #f3f4f6;
 }
 
+.model-vendor-group {
+    margin: 8px 0 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.model-vendor-group:first-of-type {
+    margin-top: 0;
+}
+
+.vendor-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-radius: 4px;
+    margin-bottom: 6px;
+}
+
 .model-option {
     display: flex;
     align-items: center;
